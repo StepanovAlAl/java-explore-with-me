@@ -1,10 +1,14 @@
 package ru.practicum;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import jakarta.servlet.http.HttpServletRequest;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -12,16 +16,24 @@ import java.util.List;
 
 public class StatsClient {
     private final RestTemplate restTemplate;
-    private final String serverUrl;
+
+    @Value("${stats.server.url:http://localhost:9090}")
+    private String serverUrl;
+
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public StatsClient(String serverUrl) {
+    public StatsClient() {
         this.restTemplate = new RestTemplate();
-        this.serverUrl = serverUrl;
     }
 
-    public void hit(EndpointHit endpointHit) {
+    public void hit(HttpServletRequest request, String appName) {
         String url = serverUrl + "/hit";
+
+        EndpointHit endpointHit = new EndpointHit();
+        endpointHit.setApp(appName);
+        endpointHit.setUri(request.getRequestURI());
+        endpointHit.setIp(getClientIp(request));
+        endpointHit.setTimestamp(LocalDateTime.now());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -39,14 +51,12 @@ public class StatsClient {
         String url = serverUrl + "/stats";
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
-                .queryParam("start", start.format(formatter))
-                .queryParam("end", end.format(formatter))
+                .queryParam("start", encodeValue(start.format(formatter)))
+                .queryParam("end", encodeValue(end.format(formatter)))
                 .queryParam("unique", unique);
 
         if (uris != null && !uris.isEmpty()) {
-            for (String uri : uris) {
-                builder.queryParam("uris", uri);
-            }
+            builder.queryParam("uris", String.join(",", uris));
         }
 
         try {
@@ -58,5 +68,17 @@ public class StatsClient {
         } catch (HttpStatusCodeException e) {
             throw new RuntimeException("Failed to get stats: " + e.getStatusCode(), e);
         }
+    }
+
+    private String encodeValue(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

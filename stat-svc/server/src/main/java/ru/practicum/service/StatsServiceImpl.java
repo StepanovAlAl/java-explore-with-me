@@ -30,7 +30,7 @@ public class StatsServiceImpl implements StatsService {
         entity.setTimestamp(endpointHit.getTimestamp());
 
         statsRepository.save(entity);
-        log.info("Saved hit: app={}, uri={}, ip={}", entity.getApp(), entity.getUri(), entity.getIp());
+        log.info("Saved hit: app={}, uri={}, ip={}, timestamp={}", entity.getApp(), entity.getUri(), entity.getIp(), entity.getTimestamp());
     }
 
     @Override
