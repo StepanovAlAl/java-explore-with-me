@@ -1,14 +1,24 @@
 services:
   stats-server:
+    build: ./stat-svc/server
     ports:
       - "9090:9090"
 
   stats-db:
     image: postgres:16.1
+    environment:
+      POSTGRES_DB: stats
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
 
-  ewm-service:
-    ports:
-      - "8080:8080"
+#  ewm-service:
+#    ports:
+#      - "8080:8080"
 
   ewm-db:
     image: postgres:16.1
