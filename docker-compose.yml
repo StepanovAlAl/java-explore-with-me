@@ -28,6 +28,12 @@ services:
       SPRING_DATASOURCE_USERNAME: stats_user
       SPRING_DATASOURCE_PASSWORD: stats_password
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9090/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
   ewm-db:
     image: postgres:16.1
     container_name: ewm-db
@@ -52,8 +58,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - ewm-db
-      - stats-server
+      ewm-db:
+        condition: service_healthy
+      stats-server:
+        condition: service_healthy
     environment:
       STAT_SERVER_URL: http://stats-server:9090
       SPRING_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
