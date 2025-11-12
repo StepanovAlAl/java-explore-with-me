@@ -11,6 +11,10 @@
 	</parent>
 
 	<name>Explore With Me</name>
+	<modules>
+		<module>stat-svc</module>
+		<module>main-svc</module>
+	</modules>
 
 	<groupId>ru.practicum</groupId>
 	<artifactId>explore-with-me</artifactId>
@@ -21,7 +25,15 @@
 		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok</artifactId>
+				<version>${lombok.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<build>
 		<pluginManagement>
 			<plugins>
