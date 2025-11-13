@@ -1,9 +1,8 @@
 package ru.practicum.dto;
 
 import lombok.Data;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import org.springframework.format.annotation.DateTimeFormat;
+import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 @Data
@@ -13,6 +12,7 @@ public class NewEventDto {
     private String annotation;
 
     @NotNull
+    @Positive
     private Long category;
 
     @NotBlank
@@ -20,12 +20,15 @@ public class NewEventDto {
     private String description;
 
     @NotNull
+    @Future
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     @NotNull
     private LocationDto location;
 
     private Boolean paid = false;
+    @PositiveOrZero
     private Integer participantLimit = 0;
     private Boolean requestModeration = true;
 
