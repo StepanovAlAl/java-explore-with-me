@@ -1,6 +1,7 @@
 package ru.practicum.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -44,6 +46,9 @@ public class EventServiceImpl implements EventService {
         Category category = categoryRepository.findById(newEventDto.getCategory())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
 
+        if (newEventDto.getEventDate() == null) {
+            throw new ValidationException("Event date cannot be null");
+        }
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new ValidationException("Event date too soon");
         }
@@ -63,6 +68,9 @@ public class EventServiceImpl implements EventService {
                 .requestModeration(newEventDto.getRequestModeration())
                 .title(newEventDto.getTitle())
                 .state(EventState.PENDING)
+                .createdOn(LocalDateTime.now())
+                .confirmedRequests(0)
+                .views(0L)
                 .build();
 
         Event savedEvent = eventRepository.save(event);
@@ -165,48 +173,69 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> getEventsPublic(String text, List<Long> categories, Boolean paid,
                                                LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                Boolean onlyAvailable, String sort, Pageable pageable) {
-        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
-            throw new ValidationException("Start date after end date");
-        }
-
-        if (rangeStart == null) {
-            rangeStart = LocalDateTime.now();
-        }
-
-        List<Event> events = eventRepository.findEventsPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, pageable);
-
-        for (Event event : events) {
-            Long views = statsService.getEventViews(event.getId());
-            event.setViews(views);
-        }
-
-        if (sort != null) {
-            if ("EVENT_DATE".equals(sort)) {
-                events.sort((e1, e2) -> e1.getEventDate().compareTo(e2.getEventDate()));
-            } else if ("VIEWS".equals(sort)) {
-                events.sort((e1, e2) -> e2.getViews().compareTo(e1.getViews()));
+        try {
+            if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
+                throw new ValidationException("Start date after end date");
             }
-        }
 
-        return events.stream()
-                .map(eventMapper::toEventShortDto)
-                .collect(Collectors.toList());
+            if (rangeStart == null) {
+                rangeStart = LocalDateTime.now();
+            }
+
+            List<Event> events = eventRepository.findEventsPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, pageable);
+
+            for (Event event : events) {
+                try {
+                    Long views = statsService.getEventViews(event.getId());
+                    event.setViews(views != null ? views : 0L);
+                } catch (Exception e) {
+                    log.warn("Failed to get views for event {}: {}", event.getId(), e.getMessage());
+                    event.setViews(0L);
+                }
+            }
+
+            if (sort != null) {
+                if ("EVENT_DATE".equals(sort)) {
+                    events.sort((e1, e2) -> e1.getEventDate().compareTo(e2.getEventDate()));
+                } else if ("VIEWS".equals(sort)) {
+                    events.sort((e1, e2) -> Long.compare(e2.getViews(), e1.getViews()));
+                }
+            }
+
+            return events.stream()
+                    .map(eventMapper::toEventShortDto)
+                    .collect(Collectors.toList());
+
+        } catch (ValidationException e) {
+            throw e; // ← Перебросить валидационные ошибки
+        } catch (Exception e) {
+            log.error("Error getting public events", e);
+            throw new RuntimeException("Failed to get events", e);
+        }
     }
 
     @Override
     public EventFullDto getEventPublic(Long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event not found"));
+        try {
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new NotFoundException("Event not found"));
 
-        if (event.getState() != EventState.PUBLISHED) {
-            throw new NotFoundException("Event not found");
+            if (event.getState() != EventState.PUBLISHED) {
+                throw new NotFoundException("Event not found");
+            }
+
+            Long views = statsService.getEventViews(eventId);
+            event.setViews(views);
+
+            Event savedEvent = eventRepository.save(event);
+            return eventMapper.toEventFullDto(savedEvent);
+
+        } catch (NotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error getting public event: {}", eventId, e);
+            throw new RuntimeException("Failed to get event");
         }
-
-        Long views = statsService.getEventViews(eventId);
-        event.setViews(views + 1);
-
-        Event savedEvent = eventRepository.save(event);
-        return eventMapper.toEventFullDto(savedEvent);
     }
 
     private void updateEventFields(Event event, UpdateEventUserRequest updateRequest) {

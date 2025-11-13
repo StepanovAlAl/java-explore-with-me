@@ -1,7 +1,7 @@
 package ru.practicum.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
@@ -22,7 +22,7 @@ public class NewEventDto {
 
     @NotNull(message = "Event date cannot be null")
     @Future(message = "Event date must be in the future")
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     @NotNull(message = "Location cannot be null")
