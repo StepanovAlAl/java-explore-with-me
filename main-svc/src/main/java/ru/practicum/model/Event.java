@@ -77,4 +77,29 @@ public class Event {
 
     @Column(name = "views")
     private Long views;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdOn == null) {
+            createdOn = LocalDateTime.now();
+        }
+        if (confirmedRequests == null) {
+            confirmedRequests = 0;
+        }
+        if (views == null) {
+            views = 0L;
+        }
+        if (paid == null) {
+            paid = false;
+        }
+        if (requestModeration == null) {
+            requestModeration = true;
+        }
+        if (participantLimit == null) {
+            participantLimit = 0;
+        }
+        if (state == null) {
+            state = EventState.PENDING;
+        }
+    }
 }
