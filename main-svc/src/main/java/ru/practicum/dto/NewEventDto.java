@@ -7,32 +7,35 @@ import java.time.LocalDateTime;
 
 @Data
 public class NewEventDto {
-    @NotBlank
-    @Size(min = 20, max = 2000)
+
+    @NotBlank(message = "Annotation cannot be blank")
+    @Size(min = 20, max = 2000, message = "Annotation must be between 20 and 2000 characters")
     private String annotation;
 
-    @NotNull
-    @Positive
+    @NotNull(message = "Category cannot be null")
+    @Positive(message = "Category ID must be positive")
     private Long category;
 
-    @NotBlank
-    @Size(min = 20, max = 7000)
+    @NotBlank(message = "Description cannot be blank")
+    @Size(min = 20, max = 7000, message = "Description must be between 20 and 7000 characters")
     private String description;
 
-    @NotNull
-    @Future
+    @NotNull(message = "Event date cannot be null")
+    @Future(message = "Event date must be in the future")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
-    @NotNull
+    @NotNull(message = "Location cannot be null")
     private LocationDto location;
 
     private Boolean paid = false;
-    @PositiveOrZero
+
+    @PositiveOrZero(message = "Participant limit must be positive or zero")
     private Integer participantLimit = 0;
+
     private Boolean requestModeration = true;
 
-    @NotBlank
-    @Size(min = 3, max = 120)
+    @NotBlank(message = "Title cannot be blank")
+    @Size(min = 3, max = 120, message = "Title must be between 3 and 120 characters")
     private String title;
 }

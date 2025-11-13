@@ -4,15 +4,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-        import ru.practicum.dto.EventFullDto;
+import ru.practicum.dto.EventFullDto;
 import ru.practicum.dto.EventShortDto;
 import ru.practicum.dto.NewEventDto;
 import ru.practicum.dto.UpdateEventUserRequest;
 import ru.practicum.service.EventService;
 import jakarta.validation.Valid;
+
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/users/{userId}/events")
 @RequiredArgsConstructor
