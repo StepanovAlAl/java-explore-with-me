@@ -1,14 +1,14 @@
 package ru.practicum.model;
 
-import lombok.*;
-
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import jakarta.persistence.Embeddable;
 
-@Embeddable
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Embeddable
 public class Location {
     private Float lat;
     private Float lon;

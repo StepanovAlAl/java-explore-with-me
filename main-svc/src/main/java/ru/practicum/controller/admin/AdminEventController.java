@@ -4,11 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.EventFullDto;
 import ru.practicum.dto.UpdateEventAdminRequest;
 import ru.practicum.service.EventService;
-import jakarta.validation.Valid;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,12 +31,24 @@ public class AdminEventController {
             @RequestParam(defaultValue = "10") Integer size) {
 
         Pageable pageable = PageRequest.of(from / size, size);
-        return eventService.getEventsByAdmin(users, states, categories, rangeStart, rangeEnd, pageable);
+        return eventService.getEventsAdmin(users, states, categories, rangeStart, rangeEnd, pageable);
     }
 
     @PatchMapping("/{eventId}")
     public EventFullDto updateEvent(@PathVariable Long eventId,
-                                    @Valid @RequestBody UpdateEventAdminRequest updateRequest) {
+                                    @RequestBody UpdateEventAdminRequest updateRequest) {
         return eventService.updateEventByAdmin(eventId, updateRequest);
+    }
+
+    @PatchMapping("/{eventId}/publish")
+    @ResponseStatus(HttpStatus.OK)
+    public EventFullDto publishEvent(@PathVariable Long eventId) {
+        return eventService.publishEvent(eventId);
+    }
+
+    @PatchMapping("/{eventId}/reject")
+    @ResponseStatus(HttpStatus.OK)
+    public EventFullDto rejectEvent(@PathVariable Long eventId) {
+        return eventService.rejectEvent(eventId);
     }
 }

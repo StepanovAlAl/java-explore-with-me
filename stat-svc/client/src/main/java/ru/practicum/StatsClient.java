@@ -41,9 +41,12 @@ public class StatsClient {
         HttpEntity<EndpointHit> requestEntity = new HttpEntity<>(endpointHit, headers);
 
         try {
-            restTemplate.exchange(url, HttpMethod.POST, requestEntity, Void.class);
+            ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Void.class);
+            System.out.printf("[DEBUG] Successfully saved hit for URI: %s%n", request.getRequestURI());
         } catch (HttpStatusCodeException e) {
-            throw new RuntimeException("Failed to save hit: " + e.getStatusCode(), e);
+            System.out.printf("[WARN] Failed to save hit to stats service: %s%n", e.getStatusCode());
+        } catch (Exception e) {
+            System.out.printf("[WARN] Failed to save hit to stats service: %s%n", e.getMessage());
         }
     }
 
@@ -64,9 +67,15 @@ public class StatsClient {
                     builder.toUriString(), ViewStats[].class);
 
             ViewStats[] statsArray = response.getBody();
+            System.out.printf("[DEBUG] Successfully retrieved stats, found %d records%n",
+                    statsArray != null ? statsArray.length : 0);
             return statsArray != null ? Arrays.asList(statsArray) : List.of();
         } catch (HttpStatusCodeException e) {
-            throw new RuntimeException("Failed to get stats: " + e.getStatusCode(), e);
+            System.out.printf("[WARN] Failed to get stats from stats service: %s%n", e.getStatusCode());
+            return List.of();
+        } catch (Exception e) {
+            System.out.printf("[WARN] Failed to get stats from stats service: %s%n", e.getMessage());
+            return List.of();
         }
     }
 

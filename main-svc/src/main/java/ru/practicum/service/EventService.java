@@ -2,6 +2,7 @@ package ru.practicum.service;
 
 import ru.practicum.dto.*;
 import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,14 +15,19 @@ public interface EventService {
 
     EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateRequest);
 
-    List<EventFullDto> getEventsByAdmin(List<Long> users, List<String> states, List<Long> categories,
-                                        LocalDateTime rangeStart, LocalDateTime rangeEnd, Pageable pageable);
-
-    EventFullDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest updateRequest);
-
     List<EventShortDto> getEventsPublic(String text, List<Long> categories, Boolean paid,
                                         LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                         Boolean onlyAvailable, String sort, Pageable pageable);
 
-    EventFullDto getEventPublic(Long eventId);
+    EventFullDto getEventPublic(Long id);
+
+    EventFullDto publishEvent(Long eventId);
+
+    EventFullDto rejectEvent(Long eventId);
+
+    List<EventFullDto> getEventsAdmin(List<Long> users, List<String> states, List<Long> categories,
+                                      LocalDateTime rangeStart, LocalDateTime rangeEnd,
+                                      Pageable pageable);
+
+    EventFullDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest updateRequest);
 }

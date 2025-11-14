@@ -6,5 +6,9 @@ import java.util.List;
 @Data
 public class EventRequestStatusUpdateRequest {
     private List<Long> requestIds;
-    private String status; // CONFIRMED, REJECTED
+    private Status status;
+
+    public enum Status {
+        CONFIRMED, REJECTED
+    }
 }

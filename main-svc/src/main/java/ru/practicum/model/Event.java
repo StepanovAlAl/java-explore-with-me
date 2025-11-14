@@ -22,7 +22,7 @@ public class Event {
 
     @NotBlank
     @Size(min = 20, max = 2000)
-    @Column(name = "annotation", nullable = false)
+    @Column(name = "annotation", nullable = false, length = 2000)
     private String annotation;
 
     @NotNull
@@ -30,15 +30,9 @@ public class Event {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @Column(name = "confirmed_requests")
-    private Integer confirmedRequests;
-
-    @Column(name = "created_on")
-    private LocalDateTime createdOn;
-
     @NotBlank
     @Size(min = 20, max = 7000)
-    @Column(name = "description")
+    @Column(name = "description", nullable = false, length = 7000)
     private String description;
 
     @NotNull
@@ -54,52 +48,40 @@ public class Event {
     @Embedded
     private Location location;
 
-    @Column(name = "paid")
+    @NotNull
+    @Column(name = "paid", nullable = false)
     private Boolean paid;
 
-    @Column(name = "participant_limit")
+    @NotNull
+    @Column(name = "participant_limit", nullable = false)
     private Integer participantLimit;
+
+    @NotNull
+    @Column(name = "request_moderation", nullable = false)
+    private Boolean requestModeration;
+
+    @NotBlank
+    @Size(min = 3, max = 120)
+    @Column(name = "title", nullable = false, length = 120)
+    private String title;
+
+    @NotNull
+    @Column(name = "created_on", nullable = false)
+    private LocalDateTime createdOn;
 
     @Column(name = "published_on")
     private LocalDateTime publishedOn;
 
-    @Column(name = "request_moderation")
-    private Boolean requestModeration;
-
+    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "state")
+    @Column(name = "state", nullable = false)
     private EventState state;
 
-    @NotBlank
-    @Size(min = 3, max = 120)
-    @Column(name = "title", nullable = false)
-    private String title;
+    @NotNull
+    @Column(name = "confirmed_requests", nullable = false)
+    private Integer confirmedRequests;
 
-    @Column(name = "views")
+    @NotNull
+    @Column(name = "views", nullable = false)
     private Long views;
-
-    @PrePersist
-    protected void onCreate() {
-        if (createdOn == null) {
-            createdOn = LocalDateTime.now();
-        }
-        if (confirmedRequests == null) {
-            confirmedRequests = 0;
-        }
-        if (views == null) {
-            views = 0L;
-        }
-        if (paid == null) {
-            paid = false;
-        }
-        if (requestModeration == null) {
-            requestModeration = true;
-        }
-        if (participantLimit == null) {
-            participantLimit = 0;
-        }
-        if (state == null) {
-            state = EventState.PENDING;
-        }
-    }
 }

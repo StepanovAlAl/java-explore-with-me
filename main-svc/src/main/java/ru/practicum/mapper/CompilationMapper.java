@@ -2,36 +2,42 @@ package ru.practicum.mapper;
 
 import org.springframework.stereotype.Component;
 import ru.practicum.dto.CompilationDto;
-import ru.practicum.dto.EventShortDto;
+import ru.practicum.dto.NewCompilationDto;
 import ru.practicum.model.Compilation;
-import java.util.List;
+import ru.practicum.model.Event;
+
 import java.util.stream.Collectors;
 
 @Component
 public class CompilationMapper {
 
-    private final EventMapper eventMapper;
+    public Compilation toCompilation(NewCompilationDto newCompilationDto) {
+        if (newCompilationDto == null) {
+            return null;
+        }
 
-    public CompilationMapper(EventMapper eventMapper) {
-        this.eventMapper = eventMapper;
+        Compilation compilation = new Compilation();
+        compilation.setTitle(newCompilationDto.getTitle());
+        compilation.setPinned(newCompilationDto.getPinned());
+        return compilation;
     }
 
     public CompilationDto toCompilationDto(Compilation compilation) {
         if (compilation == null) {
             return null;
         }
-        CompilationDto compilationDto = new CompilationDto();
-        compilationDto.setId(compilation.getId());
+
+        CompilationDto dto = new CompilationDto();
+        dto.setId(compilation.getId());
+        dto.setTitle(compilation.getTitle());
+        dto.setPinned(compilation.getPinned());
 
         if (compilation.getEvents() != null) {
-            List<EventShortDto> eventDtos = compilation.getEvents().stream()
-                    .map(eventMapper::toEventShortDto)
-                    .collect(Collectors.toList());
-            compilationDto.setEvents(eventDtos);
+            dto.setEvents(compilation.getEvents().stream()
+                    .map(event -> new EventMapper().toEventShortDto(event))
+                    .collect(Collectors.toList()));
         }
 
-        compilationDto.setPinned(compilation.getPinned());
-        compilationDto.setTitle(compilation.getTitle());
-        return compilationDto;
+        return dto;
     }
 }

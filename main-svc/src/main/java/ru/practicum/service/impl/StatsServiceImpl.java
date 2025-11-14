@@ -1,6 +1,5 @@
 package ru.practicum.service.impl;
 
-
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,23 +19,39 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public void saveHit(HttpServletRequest request) {
-        statsClient.hit(request, "ewm-main-service");
+        try {
+            String uri = request.getRequestURI();
+            if (uri.startsWith("/events")) {
+                statsClient.hit(request, "ewm-main-service");
+                log.debug("Hit saved for URI: {}", uri);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to save hit to stats service: {}", e.getMessage());
+        }
     }
 
     @Override
     public Long getEventViews(Long eventId) {
         try {
-            LocalDateTime start = LocalDateTime.now().minusYears(1);
-            LocalDateTime end = LocalDateTime.now();
+            LocalDateTime start = LocalDateTime.now().minusYears(10);
+            LocalDateTime end = LocalDateTime.now().plusHours(1);
 
-            var stats = statsClient.getStats(start, end, List.of("/events/" + eventId), false);
+            String eventUri = "/events/" + eventId;
+            var stats = statsClient.getStats(start, end, List.of(eventUri), true);
 
-            if (!stats.isEmpty()) {
-                return stats.get(0).getHits();
+            if (stats != null && !stats.isEmpty()) {
+                for (var stat : stats) {
+                    if (eventUri.equals(stat.getUri())) {
+                        Long views = stat.getHits();
+                        log.debug("Found {} views for eventId: {}", views, eventId);
+                        return views;
+                    }
+                }
             }
+            log.debug("No stats found for eventId: {}", eventId);
             return 0L;
         } catch (Exception e) {
-            log.error("Error getting event views for eventId: {}", eventId, e);
+            log.warn("Error getting event views for eventId: {}, error: {}", eventId, e.getMessage());
             return 0L;
         }
     }

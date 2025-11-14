@@ -12,19 +12,10 @@ public class CategoryMapper {
         if (category == null) {
             return null;
         }
-        CategoryDto categoryDto = new CategoryDto();
-        categoryDto.setId(category.getId());
-        categoryDto.setName(category.getName());
-        return categoryDto;
-    }
-
-    public Category toCategory(NewCategoryDto newCategoryDto) {
-        if (newCategoryDto == null) {
-            return null;
-        }
-        Category category = new Category();
-        category.setName(newCategoryDto.getName());
-        return category;
+        CategoryDto dto = new CategoryDto();
+        dto.setId(category.getId());
+        dto.setName(category.getName());
+        return dto;
     }
 
     public Category toCategory(CategoryDto categoryDto) {
@@ -34,6 +25,15 @@ public class CategoryMapper {
         Category category = new Category();
         category.setId(categoryDto.getId());
         category.setName(categoryDto.getName());
+        return category;
+    }
+
+    public Category toCategory(NewCategoryDto newCategoryDto) {
+        if (newCategoryDto == null) {
+            return null;
+        }
+        Category category = new Category();
+        category.setName(newCategoryDto.getName());
         return category;
     }
 }

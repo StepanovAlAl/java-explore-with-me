@@ -14,6 +14,7 @@ import ru.practicum.model.Event;
 import ru.practicum.repository.CompilationRepository;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.service.CompilationService;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,16 +32,19 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     @Transactional
     public CompilationDto createCompilation(NewCompilationDto newCompilationDto) {
-        Set<Event> events = new HashSet<>();
-        if (newCompilationDto.getEvents() != null) {
-            events = new HashSet<>(eventRepository.findByIdIn(newCompilationDto.getEvents()));
+        Compilation compilation = compilationMapper.toCompilation(newCompilationDto);
+
+        if (newCompilationDto.getEvents() != null && !newCompilationDto.getEvents().isEmpty()) {
+            List<Event> events = eventRepository.findByIdIn(newCompilationDto.getEvents());
+            Set<Event> eventSet = new HashSet<>(events);
+            compilation.setEvents(eventSet);
+        } else {
+            compilation.setEvents(new HashSet<>());
         }
 
-        Compilation compilation = Compilation.builder()
-                .events(events)
-                .pinned(newCompilationDto.getPinned())
-                .title(newCompilationDto.getTitle())
-                .build();
+        if (compilation.getPinned() == null) {
+            compilation.setPinned(false);
+        }
 
         Compilation savedCompilation = compilationRepository.save(compilation);
         return compilationMapper.toCompilationDto(savedCompilation);
@@ -61,17 +65,18 @@ public class CompilationServiceImpl implements CompilationService {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found"));
 
-        if (updateRequest.getEvents() != null) {
-            Set<Event> events = new HashSet<>(eventRepository.findByIdIn(updateRequest.getEvents()));
-            compilation.setEvents(events);
+        if (updateRequest.getTitle() != null) {
+            compilation.setTitle(updateRequest.getTitle());
         }
 
         if (updateRequest.getPinned() != null) {
             compilation.setPinned(updateRequest.getPinned());
         }
 
-        if (updateRequest.getTitle() != null) {
-            compilation.setTitle(updateRequest.getTitle());
+        if (updateRequest.getEvents() != null) {
+            List<Event> events = eventRepository.findByIdIn(updateRequest.getEvents());
+            Set<Event> eventSet = new HashSet<>(events);
+            compilation.setEvents(eventSet);
         }
 
         Compilation updatedCompilation = compilationRepository.save(compilation);

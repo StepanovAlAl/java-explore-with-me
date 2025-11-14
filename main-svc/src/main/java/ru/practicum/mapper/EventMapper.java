@@ -3,65 +3,99 @@ package ru.practicum.mapper;
 import org.springframework.stereotype.Component;
 import ru.practicum.dto.EventFullDto;
 import ru.practicum.dto.EventShortDto;
-import ru.practicum.dto.LocationDto;
+import ru.practicum.dto.NewEventDto;
 import ru.practicum.model.Event;
+import ru.practicum.model.Location;
 
 @Component
 public class EventMapper {
 
-    private final UserMapper userMapper;
-    private final CategoryMapper categoryMapper;
+    public Event toEvent(NewEventDto newEventDto) {
+        if (newEventDto == null) {
+            return null;
+        }
 
-    public EventMapper(UserMapper userMapper, CategoryMapper categoryMapper) {
-        this.userMapper = userMapper;
-        this.categoryMapper = categoryMapper;
+        Event event = new Event();
+        event.setAnnotation(newEventDto.getAnnotation());
+        event.setDescription(newEventDto.getDescription());
+        event.setEventDate(newEventDto.getEventDate());
+
+        if (newEventDto.getLocation() != null) {
+            Location location = new Location();
+            location.setLat(newEventDto.getLocation().getLat());
+            location.setLon(newEventDto.getLocation().getLon());
+            event.setLocation(location);
+        }
+
+        event.setPaid(newEventDto.getPaid() != null ? newEventDto.getPaid() : false);
+        event.setParticipantLimit(newEventDto.getParticipantLimit() != null ? newEventDto.getParticipantLimit() : 0);
+        event.setRequestModeration(newEventDto.getRequestModeration() != null ? newEventDto.getRequestModeration() : true);
+        event.setTitle(newEventDto.getTitle());
+
+        return event;
     }
 
     public EventFullDto toEventFullDto(Event event) {
         if (event == null) {
             return null;
         }
-        EventFullDto eventFullDto = new EventFullDto();
-        eventFullDto.setId(event.getId());
-        eventFullDto.setAnnotation(event.getAnnotation());
-        eventFullDto.setCategory(categoryMapper.toCategoryDto(event.getCategory()));
-        eventFullDto.setConfirmedRequests(event.getConfirmedRequests());
-        eventFullDto.setCreatedOn(event.getCreatedOn());
-        eventFullDto.setDescription(event.getDescription());
-        eventFullDto.setEventDate(event.getEventDate());
-        eventFullDto.setInitiator(userMapper.toUserShortDto(event.getInitiator()));
+
+        EventFullDto dto = new EventFullDto();
+        dto.setId(event.getId());
+        dto.setAnnotation(event.getAnnotation());
+        dto.setDescription(event.getDescription());
+        dto.setEventDate(event.getEventDate());
 
         if (event.getLocation() != null) {
-            LocationDto locationDto = new LocationDto();
+            ru.practicum.dto.LocationDto locationDto = new ru.practicum.dto.LocationDto();
             locationDto.setLat(event.getLocation().getLat());
             locationDto.setLon(event.getLocation().getLon());
-            eventFullDto.setLocation(locationDto);
+            dto.setLocation(locationDto);
         }
 
-        eventFullDto.setPaid(event.getPaid());
-        eventFullDto.setParticipantLimit(event.getParticipantLimit());
-        eventFullDto.setPublishedOn(event.getPublishedOn());
-        eventFullDto.setRequestModeration(event.getRequestModeration());
-        eventFullDto.setState(event.getState());
-        eventFullDto.setTitle(event.getTitle());
-        eventFullDto.setViews(event.getViews());
-        return eventFullDto;
+        dto.setPaid(event.getPaid());
+        dto.setParticipantLimit(event.getParticipantLimit());
+        dto.setRequestModeration(event.getRequestModeration());
+        dto.setTitle(event.getTitle());
+        dto.setCreatedOn(event.getCreatedOn());
+        dto.setPublishedOn(event.getPublishedOn());
+        dto.setState(event.getState());
+        dto.setConfirmedRequests(event.getConfirmedRequests());
+        dto.setViews(event.getViews());
+
+        if (event.getInitiator() != null) {
+            dto.setInitiator(new UserMapper().toUserShortDto(event.getInitiator()));
+        }
+
+        if (event.getCategory() != null) {
+            dto.setCategory(new CategoryMapper().toCategoryDto(event.getCategory()));
+        }
+
+        return dto;
     }
 
     public EventShortDto toEventShortDto(Event event) {
         if (event == null) {
             return null;
         }
-        EventShortDto eventShortDto = new EventShortDto();
-        eventShortDto.setId(event.getId());
-        eventShortDto.setAnnotation(event.getAnnotation());
-        eventShortDto.setCategory(categoryMapper.toCategoryDto(event.getCategory()));
-        eventShortDto.setConfirmedRequests(event.getConfirmedRequests());
-        eventShortDto.setEventDate(event.getEventDate());
-        eventShortDto.setInitiator(userMapper.toUserShortDto(event.getInitiator()));
-        eventShortDto.setPaid(event.getPaid());
-        eventShortDto.setTitle(event.getTitle());
-        eventShortDto.setViews(event.getViews());
-        return eventShortDto;
+
+        EventShortDto dto = new EventShortDto();
+        dto.setId(event.getId());
+        dto.setAnnotation(event.getAnnotation());
+        dto.setEventDate(event.getEventDate());
+        dto.setPaid(event.getPaid());
+        dto.setTitle(event.getTitle());
+        dto.setConfirmedRequests(event.getConfirmedRequests());
+        dto.setViews(event.getViews());
+
+        if (event.getInitiator() != null) {
+            dto.setInitiator(new UserMapper().toUserShortDto(event.getInitiator()));
+        }
+
+        if (event.getCategory() != null) {
+            dto.setCategory(new CategoryMapper().toCategoryDto(event.getCategory()));
+        }
+
+        return dto;
     }
 }

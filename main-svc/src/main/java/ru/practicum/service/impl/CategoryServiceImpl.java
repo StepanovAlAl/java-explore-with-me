@@ -13,6 +13,7 @@ import ru.practicum.model.Category;
 import ru.practicum.repository.CategoryRepository;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.service.CategoryService;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,7 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
         if (categoryRepository.existsByName(newCategoryDto.getName())) {
-            throw new ConflictException("Category name must be unique");
+            throw new ConflictException("Category with name '" + newCategoryDto.getName() + "' already exists");
         }
 
         Category category = categoryMapper.toCategory(newCategoryDto);
@@ -39,13 +40,25 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    public void deleteCategory(Long catId) {
+        Category category = categoryRepository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Category with id=" + catId + " was not found"));
+
+        if (eventRepository.existsByCategoryId(catId)) {
+            throw new ConflictException("The category is not empty");
+        }
+
+        categoryRepository.deleteById(catId);
+    }
+
+    @Override
+    @Transactional
     public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Category with id=" + catId + " was not found"));
 
-        if (!category.getName().equals(categoryDto.getName()) &&
-                categoryRepository.existsByName(categoryDto.getName())) {
-            throw new ConflictException("Category name must be unique");
+        if (categoryRepository.existsByNameAndIdNot(categoryDto.getName(), catId)) {
+            throw new ConflictException("Category with name '" + categoryDto.getName() + "' already exists");
         }
 
         category.setName(categoryDto.getName());
@@ -54,22 +67,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    @Transactional
-    public void deleteCategory(Long catId) {
-        if (!categoryRepository.existsById(catId)) {
-            throw new NotFoundException("Category with id=" + catId + " was not found");
-        }
-
-        if (!eventRepository.findByCategoryId(catId).isEmpty()) {
-            throw new ConflictException("The category is not empty");
-        }
-
-        categoryRepository.deleteById(catId);
-    }
-
-    @Override
     public List<CategoryDto> getCategories(Pageable pageable) {
-        return categoryRepository.findAllBy(pageable).stream()
+        return categoryRepository.findAll(pageable).stream()
                 .map(categoryMapper::toCategoryDto)
                 .collect(Collectors.toList());
     }

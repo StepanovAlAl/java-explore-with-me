@@ -12,11 +12,35 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
+
     List<Event> findByInitiatorId(Long userId, Pageable pageable);
 
     Optional<Event> findByIdAndInitiatorId(Long eventId, Long userId);
 
-    List<Event> findByCategoryId(Long categoryId);
+    Optional<Event> findByIdAndState(Long eventId, EventState state);
+
+    boolean existsByCategoryId(Long categoryId);
+
+    List<Event> findByIdIn(List<Long> eventIds);
+
+    @Query("SELECT e FROM Event e WHERE e.id = :eventId AND e.initiator.id = :userId")
+    Optional<Event> findByEventIdAndInitiatorId(@Param("eventId") Long eventId, @Param("userId") Long userId);
+
+    @Query("SELECT e FROM Event e WHERE e.initiator.id = :userId AND e.id = :eventId")
+    Optional<Event> findByInitiatorIdAndEventId(@Param("userId") Long userId, @Param("eventId") Long eventId);
+
+    @Query("SELECT e FROM Event e WHERE " +
+            "(:text IS NULL OR LOWER(e.annotation) LIKE LOWER(CONCAT('%', :text, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%'))) AND " +
+            "(:categories IS NULL OR e.category.id IN :categories) AND " +
+            "(:paid IS NULL OR e.paid = :paid) AND " +
+            "e.eventDate BETWEEN :rangeStart AND :rangeEnd AND " +
+            "e.state = 'PUBLISHED'")
+    List<Event> findPublicEvents(@Param("text") String text,
+                                 @Param("categories") List<Long> categories,
+                                 @Param("paid") Boolean paid,
+                                 @Param("rangeStart") LocalDateTime rangeStart,
+                                 @Param("rangeEnd") LocalDateTime rangeEnd,
+                                 Pageable pageable);
 
     @Query("SELECT e FROM Event e WHERE " +
             "(:users IS NULL OR e.initiator.id IN :users) AND " +
@@ -24,28 +48,23 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "(:categories IS NULL OR e.category.id IN :categories) AND " +
             "(:rangeStart IS NULL OR e.eventDate >= :rangeStart) AND " +
             "(:rangeEnd IS NULL OR e.eventDate <= :rangeEnd)")
-    List<Event> findEventsByAdmin(@Param("users") List<Long> users,
-                                  @Param("states") List<EventState> states,
-                                  @Param("categories") List<Long> categories,
-                                  @Param("rangeStart") LocalDateTime rangeStart,
-                                  @Param("rangeEnd") LocalDateTime rangeEnd,
-                                  Pageable pageable);
+    List<Event> findAdminEvents(@Param("users") List<Long> users,
+                                @Param("states") List<EventState> states,
+                                @Param("categories") List<Long> categories,
+                                @Param("rangeStart") LocalDateTime rangeStart,
+                                @Param("rangeEnd") LocalDateTime rangeEnd,
+                                Pageable pageable);
 
     @Query("SELECT e FROM Event e WHERE " +
-            "e.state = 'PUBLISHED' AND " +
-            "(:text IS NULL OR LOWER(e.annotation) LIKE LOWER(CONCAT('%', :text, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%'))) AND " +
+            "(:users IS NULL OR e.initiator.id IN :users) AND " +
+            "(:stateStrings IS NULL OR e.state IN :stateStrings) AND " +
             "(:categories IS NULL OR e.category.id IN :categories) AND " +
-            "(:paid IS NULL OR e.paid = :paid) AND " +
             "(:rangeStart IS NULL OR e.eventDate >= :rangeStart) AND " +
-            "(:rangeEnd IS NULL OR e.eventDate <= :rangeEnd) AND " +
-            "(:onlyAvailable IS NULL OR :onlyAvailable = false OR e.confirmedRequests < e.participantLimit)")
-    List<Event> findEventsPublic(@Param("text") String text,
-                                 @Param("categories") List<Long> categories,
-                                 @Param("paid") Boolean paid,
-                                 @Param("rangeStart") LocalDateTime rangeStart,
-                                 @Param("rangeEnd") LocalDateTime rangeEnd,
-                                 @Param("onlyAvailable") Boolean onlyAvailable,
-                                 Pageable pageable);
-
-    List<Event> findByIdIn(List<Long> eventIds);
+            "(:rangeEnd IS NULL OR e.eventDate <= :rangeEnd)")
+    List<Event> findAdminEventsWithStringStates(@Param("users") List<Long> users,
+                                                @Param("stateStrings") List<String> stateStrings,
+                                                @Param("categories") List<Long> categories,
+                                                @Param("rangeStart") LocalDateTime rangeStart,
+                                                @Param("rangeEnd") LocalDateTime rangeEnd,
+                                                Pageable pageable);
 }
