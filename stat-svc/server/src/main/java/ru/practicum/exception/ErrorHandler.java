@@ -3,6 +3,7 @@ package ru.practicum.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -24,6 +25,14 @@ public class ErrorHandler {
     public String handleIllegalArgumentException(IllegalArgumentException e) {
         log.error("Illegal argument: {}", e.getMessage());
         return e.getMessage();
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleMissingParams(MissingServletRequestParameterException e) {
+        String errorMessage = "Required request parameter '" + e.getParameterName() + "' is not present";
+        log.error("Missing request parameter: {}", errorMessage);
+        return errorMessage;
     }
 
     @ExceptionHandler(Exception.class)

@@ -1,4 +1,4 @@
-FROM amazoncorretto:21
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 COPY target/*.jar app.jar
 EXPOSE 9090

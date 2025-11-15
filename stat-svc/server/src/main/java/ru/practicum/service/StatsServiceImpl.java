@@ -30,7 +30,8 @@ public class StatsServiceImpl implements StatsService {
         entity.setTimestamp(endpointHit.getTimestamp());
 
         statsRepository.save(entity);
-        log.info("Saved hit: app={}, uri={}, ip={}, timestamp={}", entity.getApp(), entity.getUri(), entity.getIp(), entity.getTimestamp());
+        log.info("Saved hit: app={}, uri={}, ip={}, timestamp={}",
+                entity.getApp(), entity.getUri(), entity.getIp(), entity.getTimestamp());
     }
 
     @Override
@@ -51,6 +52,12 @@ public class StatsServiceImpl implements StatsService {
     }
 
     private void validateTimeRange(LocalDateTime start, LocalDateTime end) {
+        if (start == null) {
+            throw new IllegalArgumentException("Start date cannot be null");
+        }
+        if (end == null) {
+            throw new IllegalArgumentException("End date cannot be null");
+        }
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start date cannot be after end date");
         }

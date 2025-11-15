@@ -10,11 +10,12 @@ services:
       POSTGRES_PASSWORD: stats_password
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
-      timeout: 5s
+      timeout: 10s
       interval: 5s
       retries: 10
     volumes:
       - stats_data:/var/lib/postgresql/data
+
   stats-server:
     build: ./stat-svc/server
     container_name: stats-server
@@ -27,13 +28,14 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/stats
       SPRING_DATASOURCE_USERNAME: stats_user
       SPRING_DATASOURCE_PASSWORD: stats_password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9090/actuator/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 40s
+      test: ["CMD", "curl", "-f", "http://localhost:9090/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   ewm-db:
     image: postgres:16.1
     container_name: ewm-db
@@ -45,10 +47,9 @@ services:
       POSTGRES_PASSWORD: ewm_password
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
-      timeout: 5s
+      timeout: 10s
       interval: 5s
       retries: 10
-
     volumes:
       - ewm_data:/var/lib/postgresql/data
 
@@ -67,6 +68,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
       SPRING_DATASOURCE_USERNAME: ewm_user
       SPRING_DATASOURCE_PASSWORD: ewm_password
+      LOGGING_LEVEL_RU_PRACTICUM: DEBUG
 
 volumes:
   stats_data:
