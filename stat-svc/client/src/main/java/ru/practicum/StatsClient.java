@@ -4,13 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -21,7 +19,7 @@ import java.util.List;
 public class StatsClient {
     private final RestTemplate restTemplate;
 
-    @Value("${stat-server.url:http://localhost:9090}")
+    @Value("${stat-server.url:http://stats-server:9090}")
     private String serverUrl;
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -33,10 +31,15 @@ public class StatsClient {
     public void hit(HttpServletRequest request, String appName) {
         String url = serverUrl + "/hit";
 
+        String clientIp = getClientIp(request);
+        String uri = request.getRequestURI();
+
+        log.info("Sending hit to stats service: app={}, uri={}, ip={}", appName, uri, clientIp);
+
         EndpointHit endpointHit = new EndpointHit();
         endpointHit.setApp(appName);
-        endpointHit.setUri(request.getRequestURI());
-        endpointHit.setIp(getClientIp(request));
+        endpointHit.setUri(uri);
+        endpointHit.setIp(clientIp);
         endpointHit.setTimestamp(LocalDateTime.now());
 
         HttpHeaders headers = new HttpHeaders();
@@ -45,11 +48,8 @@ public class StatsClient {
         HttpEntity<EndpointHit> requestEntity = new HttpEntity<>(endpointHit, headers);
 
         try {
-            ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Void.class);
-            log.info("Successfully saved hit for URI: {}, IP: {}, App: {}",
-                    request.getRequestURI(), getClientIp(request), appName);
-        } catch (HttpStatusCodeException e) {
-            log.error("Failed to save hit to stats service: {}", e.getStatusCode());
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            log.info("Stats service hit response: {} - {}", response.getStatusCode(), response.getBody());
         } catch (Exception e) {
             log.error("Failed to save hit to stats service: {}", e.getMessage());
         }
@@ -59,33 +59,35 @@ public class StatsClient {
         String url = serverUrl + "/stats";
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
-                .queryParam("start", encodeValue(start.format(formatter)))
-                .queryParam("end", encodeValue(end.format(formatter)))
-                .queryParam("unique", unique);
+                .queryParam("start", start.format(formatter))
+                .queryParam("end", end.format(formatter))
+                .queryParam("unique", unique != null ? unique : false);
 
         if (uris != null && !uris.isEmpty()) {
-            builder.queryParam("uris", String.join(",", uris));
+            for (String uri : uris) {
+                builder.queryParam("uris", uri);
+            }
         }
 
-        try {
-            ResponseEntity<ViewStats[]> response = restTemplate.getForEntity(
-                    builder.toUriString(), ViewStats[].class);
+        String finalUrl = builder.build().toUriString();
+        log.info("Requesting stats from: {}", finalUrl);
 
+        try {
+            ResponseEntity<ViewStats[]> response = restTemplate.getForEntity(finalUrl, ViewStats[].class);
             ViewStats[] statsArray = response.getBody();
-            log.info("Successfully retrieved stats for URIs: {}, found {} records",
-                    uris, statsArray != null ? statsArray.length : 0);
+            log.info("Received {} stats records", statsArray != null ? statsArray.length : 0);
+
+            if (statsArray != null) {
+                for (ViewStats stat : statsArray) {
+                    log.debug("Stat: app={}, uri={}, hits={}", stat.getApp(), stat.getUri(), stat.getHits());
+                }
+            }
+
             return statsArray != null ? Arrays.asList(statsArray) : List.of();
-        } catch (HttpStatusCodeException e) {
-            log.error("Failed to get stats from stats service: {}", e.getStatusCode());
-            return List.of();
         } catch (Exception e) {
             log.error("Failed to get stats from stats service: {}", e.getMessage());
             return List.of();
         }
-    }
-
-    private String encodeValue(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     private String getClientIp(HttpServletRequest request) {

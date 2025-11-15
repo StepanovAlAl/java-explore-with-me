@@ -25,9 +25,7 @@ import jakarta.persistence.criteria.Predicate;
 import ru.practicum.service.EventService;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +39,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryRepository categoryRepository;
     private final EventMapper eventMapper;
     private final StatsClient statsClient;
+
 
     @Override
     @Transactional
@@ -62,16 +61,6 @@ public class EventServiceImpl implements EventService {
         event.setState(EventState.PENDING);
         event.setConfirmedRequests(0);
         event.setViews(0L);
-
-        if (event.getPaid() == null) {
-            event.setPaid(false);
-        }
-        if (event.getParticipantLimit() == null) {
-            event.setParticipantLimit(0);
-        }
-        if (event.getRequestModeration() == null) {
-            event.setRequestModeration(true);
-        }
 
         Event savedEvent = eventRepository.save(event);
         log.info("Created event with id: {} for user: {}", savedEvent.getId(), userId);
@@ -105,7 +94,7 @@ public class EventServiceImpl implements EventService {
 
         EventFullDto dto = eventMapper.toEventFullDto(event);
         Long views = getEventViewsFromStats(eventId);
-        dto.setViews(views != null ? views : 0L);
+        dto.setViews(views);
         return dto;
     }
 
@@ -119,8 +108,7 @@ public class EventServiceImpl implements EventService {
             throw new ConflictException("Only pending or canceled events can be changed");
         }
 
-        if (updateRequest.getEventDate() != null &&
-                updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
+        if (updateRequest.getEventDate() != null && updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new ValidationException("Event date must be at least 2 hours from now");
         }
 
@@ -150,20 +138,6 @@ public class EventServiceImpl implements EventService {
                                                LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                Boolean onlyAvailable, String sort, Pageable pageable) {
 
-        log.info("Getting public events with params: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}",
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort);
-
-        if (rangeStart == null) {
-            rangeStart = LocalDateTime.now();
-        }
-        if (rangeEnd == null) {
-            rangeEnd = LocalDateTime.now().plusYears(100);
-        }
-
-        if (rangeStart.isAfter(rangeEnd)) {
-            throw new ValidationException("Start date must be before end date");
-        }
-
         PublicEventParams params = new PublicEventParams(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, 0, 10);
         return getPublicEvents(params);
     }
@@ -176,13 +150,12 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("Event with id=" + id + " was not found"));
 
         Long views = getEventViewsFromStats(id);
-        event.setViews(views != null ? views : 0L);
-        eventRepository.save(event);
+        log.info("Event {} has {} views from stats service", id, views);
 
         EventFullDto dto = eventMapper.toEventFullDto(event);
-        dto.setViews(views != null ? views : 0L);
+        dto.setViews(views);
 
-        log.debug("Returning public event id: {} with views: {}", id, dto.getViews());
+        log.info("Returning event {} with {} views", id, views);
         return dto;
     }
 
@@ -231,13 +204,6 @@ public class EventServiceImpl implements EventService {
                                              LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                              Pageable pageable) {
 
-        log.info("Getting admin events with params: users={}, states={}, categories={}, rangeStart={}, rangeEnd={}",
-                users, states, categories, rangeStart, rangeEnd);
-
-        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
-            throw new ValidationException("Start date must be before end date");
-        }
-
         AdminEventParams params = new AdminEventParams(users, states, categories, rangeStart, rangeEnd, 0, 10);
         return getAdminEvents(params);
     }
@@ -248,8 +214,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        if (updateRequest.getEventDate() != null &&
-                updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
+        if (updateRequest.getEventDate() != null && updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new ValidationException("Event date must be at least 1 hour from now");
         }
 
@@ -282,13 +247,6 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventFullDto> getAdminEvents(AdminEventParams params) {
-        log.info("Getting admin events with params: {}", params);
-
-        if (params.getRangeStart() != null && params.getRangeEnd() != null &&
-                params.getRangeStart().isAfter(params.getRangeEnd())) {
-            throw new ValidationException("Start date must be before end date");
-        }
-
         List<EventState> eventStates = convertToEventStates(params.getStates());
 
         Specification<Event> spec = buildAdminEventSpecification(
@@ -471,10 +429,6 @@ public class EventServiceImpl implements EventService {
         }
 
         if (updateRequest.getTitle() != null && !updateRequest.getTitle().isBlank()) {
-
-            if (updateRequest.getTitle().length() < 3 || updateRequest.getTitle().length() > 120) {
-                throw new ValidationException("Title must be between 3 and 120 characters");
-            }
             event.setTitle(updateRequest.getTitle());
         }
     }
@@ -518,10 +472,6 @@ public class EventServiceImpl implements EventService {
         }
 
         if (updateRequest.getTitle() != null && !updateRequest.getTitle().isBlank()) {
-
-            if (updateRequest.getTitle().length() < 3 || updateRequest.getTitle().length() > 120) {
-                throw new ValidationException("Title must be between 3 and 120 characters");
-            }
             event.setTitle(updateRequest.getTitle());
         }
     }
@@ -531,23 +481,27 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-            LocalDateTime start = event.getPublishedOn() != null ?
-                    event.getPublishedOn() : LocalDateTime.now().minusYears(1);
-            LocalDateTime end = LocalDateTime.now();
-
+            LocalDateTime start = event.getCreatedOn() != null ? event.getCreatedOn() : LocalDateTime.now().minusYears(1);
+            LocalDateTime end = LocalDateTime.now().plusHours(1);
             List<String> uris = List.of("/events/" + eventId);
 
-            var stats = statsClient.getStats(start, end, uris, false);
+            log.debug("Getting stats for event {}: start={}, end={}, uris={}", eventId, start, end, uris);
 
+            var stats = statsClient.getStats(start, end, uris, true);
+
+            Long views = 0L;
             for (var stat : stats) {
                 if (("/events/" + eventId).equals(stat.getUri())) {
-                    return stat.getHits() != null ? stat.getHits() : 0L;
+                    views = stat.getHits() != null ? stat.getHits() : 0L;
+                    break;
                 }
             }
-            return 0L;
+
+            log.debug("Event {} has {} views from stats service", eventId, views);
+            return views;
 
         } catch (Exception e) {
-            log.warn("Error getting event views from stats: {}", e.getMessage());
+            log.warn("Error getting event views from stats for event {}: {}", eventId, e.getMessage());
             return 0L;
         }
     }
@@ -562,10 +516,13 @@ public class EventServiceImpl implements EventService {
                     .map(event -> "/events/" + event.getId())
                     .collect(Collectors.toList());
 
-            LocalDateTime start = LocalDateTime.now().minusYears(10);
+            LocalDateTime start = events.stream()
+                    .map(event -> event.getCreatedOn() != null ? event.getCreatedOn() : LocalDateTime.now().minusYears(1))
+                    .min(LocalDateTime::compareTo)
+                    .orElse(LocalDateTime.now().minusYears(1));
             LocalDateTime end = LocalDateTime.now().plusHours(1);
 
-            var stats = statsClient.getStats(start, end, uris, false);
+            var stats = statsClient.getStats(start, end, uris, true);
 
             return stats.stream()
                     .collect(Collectors.toMap(

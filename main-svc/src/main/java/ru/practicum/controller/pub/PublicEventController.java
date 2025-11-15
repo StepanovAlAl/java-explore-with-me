@@ -9,6 +9,7 @@ import ru.practicum.dto.EventShortDto;
 import ru.practicum.dto.PublicEventParams;
 import ru.practicum.service.EventService;
 import jakarta.servlet.http.HttpServletRequest;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
