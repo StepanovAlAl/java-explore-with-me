@@ -3,8 +3,9 @@ package ru.practicum.controller.priv;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-        import ru.practicum.dto.ParticipationRequestDto;
+import ru.practicum.dto.ParticipationRequestDto;
 import ru.practicum.service.RequestService;
+
 import java.util.List;
 
 @RestController
@@ -22,7 +23,10 @@ public class PrivateRequestController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto createRequest(@PathVariable Long userId,
-                                                 @RequestParam Long eventId) {
+                                                 @RequestParam(required = false) Long eventId) {
+        if (eventId == null) {
+            throw new ru.practicum.exception.ValidationException("EventId parameter is required");
+        }
         return requestService.createRequest(userId, eventId);
     }
 

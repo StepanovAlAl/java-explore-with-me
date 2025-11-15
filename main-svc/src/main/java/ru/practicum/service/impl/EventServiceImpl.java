@@ -175,8 +175,11 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndState(id, EventState.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + id + " was not found"));
 
-        EventFullDto dto = eventMapper.toEventFullDto(event);
         Long views = getEventViewsFromStats(id);
+        event.setViews(views != null ? views : 0L);
+        eventRepository.save(event);
+
+        EventFullDto dto = eventMapper.toEventFullDto(event);
         dto.setViews(views != null ? views : 0L);
 
         log.debug("Returning public event id: {} with views: {}", id, dto.getViews());
@@ -468,6 +471,10 @@ public class EventServiceImpl implements EventService {
         }
 
         if (updateRequest.getTitle() != null && !updateRequest.getTitle().isBlank()) {
+
+            if (updateRequest.getTitle().length() < 3 || updateRequest.getTitle().length() > 120) {
+                throw new ValidationException("Title must be between 3 and 120 characters");
+            }
             event.setTitle(updateRequest.getTitle());
         }
     }
@@ -511,6 +518,10 @@ public class EventServiceImpl implements EventService {
         }
 
         if (updateRequest.getTitle() != null && !updateRequest.getTitle().isBlank()) {
+
+            if (updateRequest.getTitle().length() < 3 || updateRequest.getTitle().length() > 120) {
+                throw new ValidationException("Title must be between 3 and 120 characters");
+            }
             event.setTitle(updateRequest.getTitle());
         }
     }
@@ -526,7 +537,7 @@ public class EventServiceImpl implements EventService {
 
             List<String> uris = List.of("/events/" + eventId);
 
-            var stats = statsClient.getStats(start, end, uris, true);
+            var stats = statsClient.getStats(start, end, uris, false);
 
             for (var stat : stats) {
                 if (("/events/" + eventId).equals(stat.getUri())) {
@@ -536,6 +547,7 @@ public class EventServiceImpl implements EventService {
             return 0L;
 
         } catch (Exception e) {
+            log.warn("Error getting event views from stats: {}", e.getMessage());
             return 0L;
         }
     }
@@ -553,7 +565,7 @@ public class EventServiceImpl implements EventService {
             LocalDateTime start = LocalDateTime.now().minusYears(10);
             LocalDateTime end = LocalDateTime.now().plusHours(1);
 
-            var stats = statsClient.getStats(start, end, uris, true);
+            var stats = statsClient.getStats(start, end, uris, false);
 
             return stats.stream()
                     .collect(Collectors.toMap(
@@ -573,7 +585,8 @@ public class EventServiceImpl implements EventService {
             String[] parts = uri.split("/");
             return Long.parseLong(parts[parts.length - 1]);
         } catch (Exception e) {
-            throw new ValidationException("Invalid URI format: " + uri);
+            log.warn("Error extracting event ID from URI: {}", uri);
+            return 0L;
         }
     }
 }
