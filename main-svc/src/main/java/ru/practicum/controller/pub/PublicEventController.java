@@ -1,14 +1,13 @@
 package ru.practicum.controller.pub;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.StatsClient;
 import ru.practicum.dto.EventFullDto;
 import ru.practicum.dto.EventShortDto;
+import ru.practicum.dto.PublicEventParams;
 import ru.practicum.service.EventService;
-import ru.practicum.service.StatsService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,7 +18,7 @@ import java.util.List;
 public class PublicEventController {
 
     private final EventService eventService;
-    private final StatsService statsService;
+    private final StatsClient statsClient;
 
     @GetMapping
     public List<EventShortDto> getEvents(
@@ -34,15 +33,16 @@ public class PublicEventController {
             @RequestParam(defaultValue = "10") Integer size,
             HttpServletRequest request) {
 
-        statsService.saveHit(request);
+        statsClient.hit(request, "ewm-main-service");
 
-        Pageable pageable = PageRequest.of(from / size, size);
-        return eventService.getEventsPublic(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, pageable);
+        PublicEventParams params = new PublicEventParams(
+                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+        return eventService.getPublicEvents(params);
     }
 
     @GetMapping("/{id}")
     public EventFullDto getEvent(@PathVariable Long id, HttpServletRequest request) {
-        statsService.saveHit(request);
+        statsClient.hit(request, "ewm-main-service");
         return eventService.getEventPublic(id);
     }
 }

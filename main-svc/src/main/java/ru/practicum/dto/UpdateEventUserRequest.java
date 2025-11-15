@@ -16,7 +16,7 @@ public class UpdateEventUserRequest {
     @Size(min = 20, max = 7000)
     private String description;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     private LocationDto location;
@@ -28,7 +28,7 @@ public class UpdateEventUserRequest {
 
     private Boolean requestModeration;
 
-    private String stateAction; // SEND_TO_REVIEW, CANCEL_REVIEW
+    private String stateAction;
 
     @Size(min = 3, max = 120)
     private String title;

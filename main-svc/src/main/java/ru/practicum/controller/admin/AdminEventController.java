@@ -1,11 +1,10 @@
 package ru.practicum.controller.admin;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.dto.AdminEventParams;
 import ru.practicum.dto.EventFullDto;
 import ru.practicum.dto.UpdateEventAdminRequest;
 import ru.practicum.service.EventService;
@@ -30,8 +29,15 @@ public class AdminEventController {
             @RequestParam(defaultValue = "0") Integer from,
             @RequestParam(defaultValue = "10") Integer size) {
 
-        Pageable pageable = PageRequest.of(from / size, size);
-        return eventService.getEventsAdmin(users, states, categories, rangeStart, rangeEnd, pageable);
+        if (from < 0) {
+            throw new IllegalArgumentException("Parameter 'from' must be greater than or equal to 0");
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException("Parameter 'size' must be greater than 0");
+        }
+
+        AdminEventParams params = new AdminEventParams(users, states, categories, rangeStart, rangeEnd, from, size);
+        return eventService.getAdminEvents(params);
     }
 
     @PatchMapping("/{eventId}")

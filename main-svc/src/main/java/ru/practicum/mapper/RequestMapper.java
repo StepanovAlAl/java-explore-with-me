@@ -26,25 +26,4 @@ public class RequestMapper {
 
         return requestDto;
     }
-
-    public ParticipationRequestDto toExactParticipationRequestDto(ParticipationRequest request) {
-        if (request == null) {
-            return null;
-        }
-        ParticipationRequestDto requestDto = new ParticipationRequestDto();
-        requestDto.setId(request.getId());
-
-        requestDto.setCreated(request.getCreated());
-        requestDto.setStatus(request.getStatus());
-
-        if (request.getEvent() != null) {
-            requestDto.setEvent(request.getEvent().getId());
-        }
-
-        if (request.getRequester() != null) {
-            requestDto.setRequester(request.getRequester().getId());
-        }
-
-        return requestDto;
-    }
 }

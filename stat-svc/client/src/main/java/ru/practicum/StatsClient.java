@@ -1,7 +1,9 @@
 package ru.practicum;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -14,10 +16,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
+@Component
 public class StatsClient {
     private final RestTemplate restTemplate;
 
-    @Value("${stats.server.url:http://localhost:9090}")
+    @Value("${stat-server.url:http://localhost:9090}")
     private String serverUrl;
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -42,11 +46,12 @@ public class StatsClient {
 
         try {
             ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Void.class);
-            System.out.printf("[DEBUG] Successfully saved hit for URI: %s%n", request.getRequestURI());
+            log.info("Successfully saved hit for URI: {}, IP: {}, App: {}",
+                    request.getRequestURI(), getClientIp(request), appName);
         } catch (HttpStatusCodeException e) {
-            System.out.printf("[WARN] Failed to save hit to stats service: %s%n", e.getStatusCode());
+            log.error("Failed to save hit to stats service: {}", e.getStatusCode());
         } catch (Exception e) {
-            System.out.printf("[WARN] Failed to save hit to stats service: %s%n", e.getMessage());
+            log.error("Failed to save hit to stats service: {}", e.getMessage());
         }
     }
 
@@ -67,14 +72,14 @@ public class StatsClient {
                     builder.toUriString(), ViewStats[].class);
 
             ViewStats[] statsArray = response.getBody();
-            System.out.printf("[DEBUG] Successfully retrieved stats, found %d records%n",
-                    statsArray != null ? statsArray.length : 0);
+            log.info("Successfully retrieved stats for URIs: {}, found {} records",
+                    uris, statsArray != null ? statsArray.length : 0);
             return statsArray != null ? Arrays.asList(statsArray) : List.of();
         } catch (HttpStatusCodeException e) {
-            System.out.printf("[WARN] Failed to get stats from stats service: %s%n", e.getStatusCode());
+            log.error("Failed to get stats from stats service: {}", e.getStatusCode());
             return List.of();
         } catch (Exception e) {
-            System.out.printf("[WARN] Failed to get stats from stats service: %s%n", e.getMessage());
+            log.error("Failed to get stats from stats service: {}", e.getMessage());
             return List.of();
         }
     }

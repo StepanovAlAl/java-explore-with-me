@@ -80,7 +80,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         ParticipationRequest savedRequest = requestRepository.save(request);
-        return requestMapper.toExactParticipationRequestDto(savedRequest);
+        return requestMapper.toParticipationRequestDto(savedRequest);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         return requestRepository.findByRequesterId(userId).stream()
-                .map(requestMapper::toExactParticipationRequestDto)
+                .map(requestMapper::toParticipationRequestDto)
                 .collect(Collectors.toList());
     }
 
@@ -106,7 +106,7 @@ public class RequestServiceImpl implements RequestService {
 
         request.setStatus(RequestStatus.CANCELED);
         ParticipationRequest updatedRequest = requestRepository.save(request);
-        return requestMapper.toExactParticipationRequestDto(updatedRequest);
+        return requestMapper.toParticipationRequestDto(updatedRequest);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class RequestServiceImpl implements RequestService {
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
         return requestRepository.findByEventId(eventId).stream()
-                .map(requestMapper::toExactParticipationRequestDto)
+                .map(requestMapper::toParticipationRequestDto)
                 .collect(Collectors.toList());
     }
 
@@ -147,10 +147,10 @@ public class RequestServiceImpl implements RequestService {
 
                 request.setStatus(RequestStatus.CONFIRMED);
                 currentConfirmed++;
-                result.getConfirmedRequests().add(requestMapper.toExactParticipationRequestDto(request));
+                result.getConfirmedRequests().add(requestMapper.toParticipationRequestDto(request));
             } else {
                 request.setStatus(RequestStatus.REJECTED);
-                result.getRejectedRequests().add(requestMapper.toExactParticipationRequestDto(request));
+                result.getRejectedRequests().add(requestMapper.toParticipationRequestDto(request));
             }
             requestsToUpdate.add(request);
         }

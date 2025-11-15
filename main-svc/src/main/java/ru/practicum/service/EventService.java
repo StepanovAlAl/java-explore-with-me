@@ -30,4 +30,6 @@ public interface EventService {
                                       Pageable pageable);
 
     EventFullDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest updateRequest);
+    List<EventFullDto> getAdminEvents(AdminEventParams params);
+    List<EventShortDto> getPublicEvents(PublicEventParams params);
 }
