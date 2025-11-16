@@ -103,6 +103,8 @@ public class EventServiceImpl implements EventService {
             throw new ValidationException("Event date must be at least 2 hours from now");
         }
 
+        validateStringLengths(updateRequest);
+
         updateEventFields(event, updateRequest);
 
         if (updateRequest.getStateAction() != null) {
@@ -161,7 +163,7 @@ public class EventServiceImpl implements EventService {
         }
 
         if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new ValidationException("Event date must be at least 1 hour from now");
+            throw new ConflictException("Event date must be at least 1 hour from now");
         }
 
         event.setState(EventState.PUBLISHED);
@@ -208,6 +210,8 @@ public class EventServiceImpl implements EventService {
         if (updateRequest.getEventDate() != null && updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new ValidationException("Event date must be at least 1 hour from now");
         }
+
+        validateStringLengths(updateRequest);
 
         if (updateRequest.getStateAction() != null) {
             switch (updateRequest.getStateAction()) {
@@ -290,6 +294,46 @@ public class EventServiceImpl implements EventService {
 
         log.info("Returning {} public events", result.size());
         return result;
+    }
+
+    private void validateStringLengths(UpdateEventAdminRequest updateRequest) {
+        if (updateRequest.getAnnotation() != null) {
+            if (updateRequest.getAnnotation().length() < 20 || updateRequest.getAnnotation().length() > 2000) {
+                throw new ValidationException("Annotation must be between 20 and 2000 characters");
+            }
+        }
+
+        if (updateRequest.getDescription() != null) {
+            if (updateRequest.getDescription().length() < 20 || updateRequest.getDescription().length() > 7000) {
+                throw new ValidationException("Description must be between 20 and 7000 characters");
+            }
+        }
+
+        if (updateRequest.getTitle() != null) {
+            if (updateRequest.getTitle().length() < 3 || updateRequest.getTitle().length() > 120) {
+                throw new ValidationException("Title must be between 3 and 120 characters");
+            }
+        }
+    }
+
+    private void validateStringLengths(UpdateEventUserRequest updateRequest) {
+        if (updateRequest.getAnnotation() != null) {
+            if (updateRequest.getAnnotation().length() < 20 || updateRequest.getAnnotation().length() > 2000) {
+                throw new ValidationException("Annotation must be between 20 and 2000 characters");
+            }
+        }
+
+        if (updateRequest.getDescription() != null) {
+            if (updateRequest.getDescription().length() < 20 || updateRequest.getDescription().length() > 7000) {
+                throw new ValidationException("Description must be between 20 and 7000 characters");
+            }
+        }
+
+        if (updateRequest.getTitle() != null) {
+            if (updateRequest.getTitle().length() < 3 || updateRequest.getTitle().length() > 120) {
+                throw new ValidationException("Title must be between 3 and 120 characters");
+            }
+        }
     }
 
     private Specification<Event> buildPublicEventSpecification(String text, List<Long> categories, Boolean paid,

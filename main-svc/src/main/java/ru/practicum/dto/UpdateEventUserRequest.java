@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,6 +20,7 @@ public class UpdateEventUserRequest {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
+    @Valid
     private LocationDto location;
 
     private Boolean paid;
