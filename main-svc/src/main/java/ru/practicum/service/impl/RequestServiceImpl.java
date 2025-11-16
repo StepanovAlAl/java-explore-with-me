@@ -34,7 +34,6 @@ public class RequestServiceImpl implements RequestService {
     private final ParticipationRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
-    private final RequestMapper requestMapper;
 
     @Override
     @Transactional
@@ -45,7 +44,6 @@ public class RequestServiceImpl implements RequestService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        // Validation checks
         if (requestRepository.existsByRequesterIdAndEventId(userId, eventId)) {
             throw new ConflictException("You have already submitted a request to participate in this event");
         }
@@ -80,7 +78,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         ParticipationRequest savedRequest = requestRepository.save(request);
-        return requestMapper.toParticipationRequestDto(savedRequest);
+        return RequestMapper.toParticipationRequestDto(savedRequest);
     }
 
     @Override
@@ -90,7 +88,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         return requestRepository.findByRequesterId(userId).stream()
-                .map(requestMapper::toParticipationRequestDto)
+                .map(RequestMapper::toParticipationRequestDto)
                 .collect(Collectors.toList());
     }
 
@@ -106,7 +104,7 @@ public class RequestServiceImpl implements RequestService {
 
         request.setStatus(RequestStatus.CANCELED);
         ParticipationRequest updatedRequest = requestRepository.save(request);
-        return requestMapper.toParticipationRequestDto(updatedRequest);
+        return RequestMapper.toParticipationRequestDto(updatedRequest);
     }
 
     @Override
@@ -115,7 +113,7 @@ public class RequestServiceImpl implements RequestService {
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
         return requestRepository.findByEventId(eventId).stream()
-                .map(requestMapper::toParticipationRequestDto)
+                .map(RequestMapper::toParticipationRequestDto)
                 .collect(Collectors.toList());
     }
 
@@ -127,7 +125,6 @@ public class RequestServiceImpl implements RequestService {
 
         List<ParticipationRequest> requests = requestRepository.findByIdIn(updateRequest.getRequestIds());
 
-        // Проверяем, что все запросы в статусе PENDING
         boolean hasNonPending = requests.stream()
                 .anyMatch(request -> request.getStatus() != RequestStatus.PENDING);
         if (hasNonPending) {
@@ -147,10 +144,10 @@ public class RequestServiceImpl implements RequestService {
 
                 request.setStatus(RequestStatus.CONFIRMED);
                 currentConfirmed++;
-                result.getConfirmedRequests().add(requestMapper.toParticipationRequestDto(request));
+                result.getConfirmedRequests().add(RequestMapper.toParticipationRequestDto(request));
             } else {
                 request.setStatus(RequestStatus.REJECTED);
-                result.getRejectedRequests().add(requestMapper.toParticipationRequestDto(request));
+                result.getRejectedRequests().add(RequestMapper.toParticipationRequestDto(request));
             }
             requestsToUpdate.add(request);
         }

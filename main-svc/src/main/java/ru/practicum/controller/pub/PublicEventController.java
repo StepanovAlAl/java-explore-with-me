@@ -34,7 +34,7 @@ public class PublicEventController {
             @RequestParam(defaultValue = "10") Integer size,
             HttpServletRequest request) {
 
-        statsClient.hit(request, "ewm-main-service");
+        statsClient.hit(request);
 
         PublicEventParams params = new PublicEventParams(
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
@@ -43,7 +43,7 @@ public class PublicEventController {
 
     @GetMapping("/{id}")
     public EventFullDto getEvent(@PathVariable Long id, HttpServletRequest request) {
-        statsClient.hit(request, "ewm-main-service");
+        statsClient.hit(request);
         return eventService.getEventPublic(id);
     }
 }

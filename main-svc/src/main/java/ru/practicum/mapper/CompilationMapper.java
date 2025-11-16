@@ -1,16 +1,14 @@
 package ru.practicum.mapper;
 
-import org.springframework.stereotype.Component;
 import ru.practicum.dto.CompilationDto;
 import ru.practicum.dto.NewCompilationDto;
 import ru.practicum.model.Compilation;
 
 import java.util.stream.Collectors;
 
-@Component
 public class CompilationMapper {
 
-    public Compilation toCompilation(NewCompilationDto newCompilationDto) {
+    public static Compilation toCompilation(NewCompilationDto newCompilationDto) {
         if (newCompilationDto == null) {
             return null;
         }
@@ -21,7 +19,7 @@ public class CompilationMapper {
         return compilation;
     }
 
-    public CompilationDto toCompilationDto(Compilation compilation) {
+    public static CompilationDto toCompilationDto(Compilation compilation) {
         if (compilation == null) {
             return null;
         }
@@ -33,7 +31,7 @@ public class CompilationMapper {
 
         if (compilation.getEvents() != null) {
             dto.setEvents(compilation.getEvents().stream()
-                    .map(event -> new EventMapper().toEventShortDto(event))
+                    .map(EventMapper::toEventShortDto)
                     .collect(Collectors.toList()));
         }
 

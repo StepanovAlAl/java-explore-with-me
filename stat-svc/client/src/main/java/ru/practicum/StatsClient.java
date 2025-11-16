@@ -22,13 +22,16 @@ public class StatsClient {
     @Value("${stat-server.url:http://stats-server:9090}")
     private String serverUrl;
 
+    @Value("${app.name:ewm-main-service}")
+    private String appName;
+
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public StatsClient() {
         this.restTemplate = new RestTemplate();
     }
 
-    public void hit(HttpServletRequest request, String appName) {
+    public void hit(HttpServletRequest request) {
         String url = serverUrl + "/hit";
 
         String clientIp = getClientIp(request);

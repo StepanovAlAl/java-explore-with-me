@@ -1,16 +1,19 @@
 package ru.practicum.mapper;
 
-import org.springframework.stereotype.Component;
 import ru.practicum.dto.EventFullDto;
 import ru.practicum.dto.EventShortDto;
 import ru.practicum.dto.NewEventDto;
 import ru.practicum.model.Event;
 import ru.practicum.model.Location;
+import ru.practicum.model.User;
+import ru.practicum.model.Category;
+import ru.practicum.model.enums.EventState;
 
-@Component
+import java.time.LocalDateTime;
+
 public class EventMapper {
 
-    public Event toEvent(NewEventDto newEventDto) {
+    public static Event toEvent(NewEventDto newEventDto, User user, Category category) {
         if (newEventDto == null) {
             return null;
         }
@@ -32,10 +35,16 @@ public class EventMapper {
         event.setRequestModeration(newEventDto.getRequestModeration() != null ? newEventDto.getRequestModeration() : true);
         event.setTitle(newEventDto.getTitle());
 
+        event.setInitiator(user);
+        event.setCategory(category);
+        event.setCreatedOn(LocalDateTime.now());
+        event.setState(EventState.PENDING);
+        event.setConfirmedRequests(0);
+
         return event;
     }
 
-    public EventFullDto toEventFullDto(Event event) {
+    public static EventFullDto toEventFullDto(Event event) {
         if (event == null) {
             return null;
         }
@@ -61,20 +70,20 @@ public class EventMapper {
         dto.setPublishedOn(event.getPublishedOn());
         dto.setState(event.getState());
         dto.setConfirmedRequests(event.getConfirmedRequests());
-        dto.setViews(event.getViews());
+        dto.setViews(0L);
 
         if (event.getInitiator() != null) {
-            dto.setInitiator(new UserMapper().toUserShortDto(event.getInitiator()));
+            dto.setInitiator(UserMapper.toUserShortDto(event.getInitiator()));
         }
 
         if (event.getCategory() != null) {
-            dto.setCategory(new CategoryMapper().toCategoryDto(event.getCategory()));
+            dto.setCategory(CategoryMapper.toCategoryDto(event.getCategory()));
         }
 
         return dto;
     }
 
-    public EventShortDto toEventShortDto(Event event) {
+    public static EventShortDto toEventShortDto(Event event) {
         if (event == null) {
             return null;
         }
@@ -86,14 +95,14 @@ public class EventMapper {
         dto.setPaid(event.getPaid());
         dto.setTitle(event.getTitle());
         dto.setConfirmedRequests(event.getConfirmedRequests());
-        dto.setViews(event.getViews());
+        dto.setViews(0L);
 
         if (event.getInitiator() != null) {
-            dto.setInitiator(new UserMapper().toUserShortDto(event.getInitiator()));
+            dto.setInitiator(UserMapper.toUserShortDto(event.getInitiator()));
         }
 
         if (event.getCategory() != null) {
-            dto.setCategory(new CategoryMapper().toCategoryDto(event.getCategory()));
+            dto.setCategory(CategoryMapper.toCategoryDto(event.getCategory()));
         }
 
         return dto;

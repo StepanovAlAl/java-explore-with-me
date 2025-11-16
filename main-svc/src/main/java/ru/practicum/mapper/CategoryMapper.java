@@ -1,14 +1,12 @@
 package ru.practicum.mapper;
 
-import org.springframework.stereotype.Component;
 import ru.practicum.dto.CategoryDto;
 import ru.practicum.dto.NewCategoryDto;
 import ru.practicum.model.Category;
 
-@Component
 public class CategoryMapper {
 
-    public CategoryDto toCategoryDto(Category category) {
+    public static CategoryDto toCategoryDto(Category category) {
         if (category == null) {
             return null;
         }
@@ -18,7 +16,7 @@ public class CategoryMapper {
         return dto;
     }
 
-    public Category toCategory(CategoryDto categoryDto) {
+    public static Category toCategory(CategoryDto categoryDto) {
         if (categoryDto == null) {
             return null;
         }
@@ -28,7 +26,7 @@ public class CategoryMapper {
         return category;
     }
 
-    public Category toCategory(NewCategoryDto newCategoryDto) {
+    public static Category toCategory(NewCategoryDto newCategoryDto) {
         if (newCategoryDto == null) {
             return null;
         }

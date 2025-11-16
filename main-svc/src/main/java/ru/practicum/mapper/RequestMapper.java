@@ -1,13 +1,11 @@
 package ru.practicum.mapper;
 
-import org.springframework.stereotype.Component;
 import ru.practicum.dto.ParticipationRequestDto;
 import ru.practicum.model.ParticipationRequest;
 
-@Component
 public class RequestMapper {
 
-    public ParticipationRequestDto toParticipationRequestDto(ParticipationRequest request) {
+    public static ParticipationRequestDto toParticipationRequestDto(ParticipationRequest request) {
         if (request == null) {
             return null;
         }

@@ -3,8 +3,6 @@ package ru.practicum.model;
 import lombok.*;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import java.util.Set;
 
 @Data
@@ -29,8 +27,6 @@ public class Compilation {
     @Column(name = "pinned")
     private Boolean pinned;
 
-    @NotBlank
-    @Size(min = 1, max = 50)
-    @Column(name = "title", nullable = false)
+    @Column(name = "title", nullable = false, length = 50)
     private String title;
 }

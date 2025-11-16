@@ -24,7 +24,6 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final EventRepository eventRepository;
-    private final CategoryMapper categoryMapper;
 
     @Override
     @Transactional
@@ -33,9 +32,9 @@ public class CategoryServiceImpl implements CategoryService {
             throw new ConflictException("Category with name '" + newCategoryDto.getName() + "' already exists");
         }
 
-        Category category = categoryMapper.toCategory(newCategoryDto);
+        Category category = CategoryMapper.toCategory(newCategoryDto);
         Category savedCategory = categoryRepository.save(category);
-        return categoryMapper.toCategoryDto(savedCategory);
+        return CategoryMapper.toCategoryDto(savedCategory);
     }
 
     @Override
@@ -63,13 +62,13 @@ public class CategoryServiceImpl implements CategoryService {
 
         category.setName(categoryDto.getName());
         Category updatedCategory = categoryRepository.save(category);
-        return categoryMapper.toCategoryDto(updatedCategory);
+        return CategoryMapper.toCategoryDto(updatedCategory);
     }
 
     @Override
     public List<CategoryDto> getCategories(Pageable pageable) {
         return categoryRepository.findAll(pageable).stream()
-                .map(categoryMapper::toCategoryDto)
+                .map(CategoryMapper::toCategoryDto)
                 .collect(Collectors.toList());
     }
 
@@ -77,6 +76,6 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto getCategory(Long catId) {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Category with id=" + catId + " was not found"));
-        return categoryMapper.toCategoryDto(category);
+        return CategoryMapper.toCategoryDto(category);
     }
 }

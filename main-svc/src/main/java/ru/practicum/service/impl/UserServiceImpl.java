@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
 
     @Override
     @Transactional
@@ -31,11 +30,11 @@ public class UserServiceImpl implements UserService {
             throw new ConflictException("User with email '" + newUserRequest.getEmail() + "' already exists");
         }
 
-        User user = userMapper.toUser(newUserRequest);
+        User user = UserMapper.toUser(newUserRequest);
 
         try {
             User savedUser = userRepository.save(user);
-            return userMapper.toUserDto(savedUser);
+            return UserMapper.toUserDto(savedUser);
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException("User with email '" + newUserRequest.getEmail() + "' already exists");
         }
@@ -50,7 +49,7 @@ public class UserServiceImpl implements UserService {
             users = userRepository.findByIdIn(ids, pageable);
         }
         return users.stream()
-                .map(userMapper::toUserDto)
+                .map(UserMapper::toUserDto)
                 .collect(Collectors.toList());
     }
 

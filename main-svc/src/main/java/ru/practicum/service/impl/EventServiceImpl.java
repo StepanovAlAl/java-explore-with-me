@@ -54,18 +54,11 @@ public class EventServiceImpl implements EventService {
             throw new ValidationException("Event date must be at least 2 hours from now");
         }
 
-        Event event = eventMapper.toEvent(newEventDto);
-        event.setInitiator(user);
-        event.setCategory(category);
-        event.setCreatedOn(LocalDateTime.now());
-        event.setState(EventState.PENDING);
-        event.setConfirmedRequests(0);
-        event.setViews(0L);
-
+        Event event = EventMapper.toEvent(newEventDto, user, category);
         Event savedEvent = eventRepository.save(event);
         log.info("Created event with id: {} for user: {}", savedEvent.getId(), userId);
 
-        return eventMapper.toEventFullDto(savedEvent);
+        return EventMapper.toEventFullDto(savedEvent);
     }
 
     @Override
@@ -481,8 +474,8 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-            LocalDateTime start = event.getCreatedOn() != null ? event.getCreatedOn() : LocalDateTime.now().minusYears(1);
-            LocalDateTime end = LocalDateTime.now().plusHours(1);
+            LocalDateTime start = event.getPublishedOn() != null ? event.getPublishedOn() : LocalDateTime.now().minusYears(1);
+            LocalDateTime end = LocalDateTime.now();
             List<String> uris = List.of("/events/" + eventId);
 
             log.debug("Getting stats for event {}: start={}, end={}, uris={}", eventId, start, end, uris);
@@ -517,10 +510,10 @@ public class EventServiceImpl implements EventService {
                     .collect(Collectors.toList());
 
             LocalDateTime start = events.stream()
-                    .map(event -> event.getCreatedOn() != null ? event.getCreatedOn() : LocalDateTime.now().minusYears(1))
+                    .map(event -> event.getPublishedOn() != null ? event.getPublishedOn() : LocalDateTime.now().minusYears(1))
                     .min(LocalDateTime::compareTo)
                     .orElse(LocalDateTime.now().minusYears(1));
-            LocalDateTime end = LocalDateTime.now().plusHours(1);
+            LocalDateTime end = LocalDateTime.now();
 
             var stats = statsClient.getStats(start, end, uris, true);
 

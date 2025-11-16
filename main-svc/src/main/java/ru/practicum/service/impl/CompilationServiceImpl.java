@@ -27,12 +27,11 @@ public class CompilationServiceImpl implements CompilationService {
 
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
-    private final CompilationMapper compilationMapper;
 
     @Override
     @Transactional
     public CompilationDto createCompilation(NewCompilationDto newCompilationDto) {
-        Compilation compilation = compilationMapper.toCompilation(newCompilationDto);
+        Compilation compilation = CompilationMapper.toCompilation(newCompilationDto);
 
         if (newCompilationDto.getEvents() != null && !newCompilationDto.getEvents().isEmpty()) {
             List<Event> events = eventRepository.findByIdIn(newCompilationDto.getEvents());
@@ -47,7 +46,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         Compilation savedCompilation = compilationRepository.save(compilation);
-        return compilationMapper.toCompilationDto(savedCompilation);
+        return CompilationMapper.toCompilationDto(savedCompilation);
     }
 
     @Override
@@ -80,7 +79,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         Compilation updatedCompilation = compilationRepository.save(compilation);
-        return compilationMapper.toCompilationDto(updatedCompilation);
+        return CompilationMapper.toCompilationDto(updatedCompilation);
     }
 
     @Override
@@ -93,7 +92,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         return compilations.stream()
-                .map(compilationMapper::toCompilationDto)
+                .map(CompilationMapper::toCompilationDto)
                 .collect(Collectors.toList());
     }
 
@@ -101,6 +100,6 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto getCompilation(Long compId) {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found"));
-        return compilationMapper.toCompilationDto(compilation);
+        return CompilationMapper.toCompilationDto(compilation);
     }
 }

@@ -1,8 +1,9 @@
 package ru.practicum.controller.admin;
 
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.AdminEventParams;
 import ru.practicum.dto.EventFullDto;
@@ -26,15 +27,8 @@ public class AdminEventController {
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
-            @RequestParam(defaultValue = "0") Integer from,
-            @RequestParam(defaultValue = "10") Integer size) {
-
-        if (from < 0) {
-            throw new IllegalArgumentException("Parameter 'from' must be greater than or equal to 0");
-        }
-        if (size <= 0) {
-            throw new IllegalArgumentException("Parameter 'size' must be greater than 0");
-        }
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size) {
 
         AdminEventParams params = new AdminEventParams(users, states, categories, rangeStart, rangeEnd, from, size);
         return eventService.getAdminEvents(params);
@@ -47,13 +41,11 @@ public class AdminEventController {
     }
 
     @PatchMapping("/{eventId}/publish")
-    @ResponseStatus(HttpStatus.OK)
     public EventFullDto publishEvent(@PathVariable Long eventId) {
         return eventService.publishEvent(eventId);
     }
 
     @PatchMapping("/{eventId}/reject")
-    @ResponseStatus(HttpStatus.OK)
     public EventFullDto rejectEvent(@PathVariable Long eventId) {
         return eventService.rejectEvent(eventId);
     }
