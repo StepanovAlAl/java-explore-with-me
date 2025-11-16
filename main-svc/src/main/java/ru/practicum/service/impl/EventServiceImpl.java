@@ -161,7 +161,7 @@ public class EventServiceImpl implements EventService {
         }
 
         if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new ConflictException("Event date must be at least 1 hour from now");
+            throw new ValidationException("Event date must be at least 1 hour from now");
         }
 
         event.setState(EventState.PUBLISHED);
