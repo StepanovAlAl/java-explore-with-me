@@ -37,9 +37,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
-    private final EventMapper eventMapper;
     private final StatsClient statsClient;
-
 
     @Override
     @Transactional
@@ -72,9 +70,9 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> viewsMap = getEventsViews(events);
 
         return events.stream()
-                .map(event -> {
-                    EventShortDto dto = eventMapper.toEventShortDto(event);
-                    dto.setViews(viewsMap.getOrDefault(event.getId(), 0L));
+                .map(EventMapper::toEventShortDto)
+                .map(dto -> {
+                    dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -85,7 +83,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        EventFullDto dto = eventMapper.toEventFullDto(event);
+        EventFullDto dto = EventMapper.toEventFullDto(event);
         Long views = getEventViewsFromStats(eventId);
         dto.setViews(views);
         return dto;
@@ -121,7 +119,7 @@ public class EventServiceImpl implements EventService {
         }
 
         Event updatedEvent = eventRepository.save(event);
-        EventFullDto result = eventMapper.toEventFullDto(updatedEvent);
+        EventFullDto result = EventMapper.toEventFullDto(updatedEvent);
         result.setViews(getEventViewsFromStats(eventId));
         return result;
     }
@@ -145,7 +143,7 @@ public class EventServiceImpl implements EventService {
         Long views = getEventViewsFromStats(id);
         log.info("Event {} has {} views from stats service", id, views);
 
-        EventFullDto dto = eventMapper.toEventFullDto(event);
+        EventFullDto dto = EventMapper.toEventFullDto(event);
         dto.setViews(views);
 
         log.info("Returning event {} with {} views", id, views);
@@ -170,7 +168,7 @@ public class EventServiceImpl implements EventService {
         event.setPublishedOn(LocalDateTime.now());
 
         Event savedEvent = eventRepository.save(event);
-        EventFullDto result = eventMapper.toEventFullDto(savedEvent);
+        EventFullDto result = EventMapper.toEventFullDto(savedEvent);
         result.setViews(getEventViewsFromStats(eventId));
         return result;
     }
@@ -187,7 +185,7 @@ public class EventServiceImpl implements EventService {
 
         event.setState(EventState.CANCELED);
         Event savedEvent = eventRepository.save(event);
-        EventFullDto result = eventMapper.toEventFullDto(savedEvent);
+        EventFullDto result = EventMapper.toEventFullDto(savedEvent);
         result.setViews(getEventViewsFromStats(eventId));
         return result;
     }
@@ -233,7 +231,7 @@ public class EventServiceImpl implements EventService {
 
         updateEventFields(event, updateRequest);
         Event updatedEvent = eventRepository.save(event);
-        EventFullDto result = eventMapper.toEventFullDto(updatedEvent);
+        EventFullDto result = EventMapper.toEventFullDto(updatedEvent);
         result.setViews(getEventViewsFromStats(eventId));
         return result;
     }
@@ -253,9 +251,9 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> viewsMap = getEventsViews(eventsPage.getContent());
 
         return eventsPage.getContent().stream()
-                .map(event -> {
-                    EventFullDto dto = eventMapper.toEventFullDto(event);
-                    dto.setViews(viewsMap.getOrDefault(event.getId(), 0L));
+                .map(EventMapper::toEventFullDto)
+                .map(dto -> {
+                    dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -283,9 +281,9 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> viewsMap = getEventsViews(eventsPage.getContent());
 
         List<EventShortDto> result = eventsPage.getContent().stream()
-                .map(event -> {
-                    EventShortDto dto = eventMapper.toEventShortDto(event);
-                    dto.setViews(viewsMap.getOrDefault(event.getId(), 0L));
+                .map(EventMapper::toEventShortDto)
+                .map(dto -> {
+                    dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
                     return dto;
                 })
                 .collect(Collectors.toList());
