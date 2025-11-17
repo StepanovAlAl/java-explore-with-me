@@ -4,7 +4,7 @@
 		"name": "!EWS comments tests",
 		"description": "Postman тесты для функциональности комментариев",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "46901902",
+		"_exporter_id": "46901902"
 	},
 	"item": [
 		{
@@ -585,19 +585,19 @@
 		},
 		{
 			"key": "eventId",
-			"value": ""
+			"value": "1"
 		},
 		{
 			"key": "categoryId",
-			"value": ""
+			"value": "1"
 		},
 		{
 			"key": "commentId",
-			"value": ""
+			"value": "1"
 		},
 		{
 			"key": "replyCommentId",
-			"value": ""
+			"value": "2"
 		}
 	]
 }
