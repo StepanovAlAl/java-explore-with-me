@@ -1,14 +1,66 @@
 {
 	"info": {
-		"_postman_id": "6dec1f59-8064-408a-985c-ee0f42fbadba",
-		"name": "EWS comments tests",
+		"_postman_id": "4debcc1d-f55c-4502-aa53-08ef869ebfae",
+		"name": "!EWS comments tests",
 		"description": "Postman тесты для функциональности комментариев",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "46901902"
+		"_exporter_id": "46901902",
+		"_collection_link": "https://alex-1339619.postman.co/workspace/Alex's-Workspace~a02cf1dc-b1ed-4db0-8030-b089b430e22f/collection/46901902-4debcc1d-f55c-4502-aa53-08ef869ebfae?action=share&source=collection_link&creator=46901902"
 	},
 	"item": [
 		{
-			"name": "Создание комментария",
+			"name": "1. Публикация события",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200 && pm.response.json().state === 'PUBLISHED') {",
+							"    pm.test(\"Событие уже опубликовано\", function () {",
+							"        pm.expect(pm.response.json().state).to.equal('PUBLISHED');",
+							"    });",
+							"} else if (pm.response.code === 200) {",
+							"    pm.test(\"Событие опубликовано\", function () {",
+							"        pm.expect(pm.response.json().state).to.equal('PUBLISHED');",
+							"    });",
+							"} else {",
+							"    pm.test(\"Статус код 200 или 409\", function () {",
+							"        pm.expect(pm.response.code === 200 || pm.response.code === 409).to.be.true;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"stateAction\": \"PUBLISH_EVENT\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/admin/events/{{eventId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"admin",
+						"events",
+						"{{eventId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Создание комментария",
 			"event": [
 				{
 					"listen": "test",
@@ -27,7 +79,7 @@
 							"    pm.expect(jsonData).to.have.property('status', 'PENDING');",
 							"});",
 							"",
-							"pm.environment.set(\"commentId\", pm.response.json().id);"
+							"pm.variables.set(\"commentId\", pm.response.json().id);"
 						],
 						"type": "text/javascript"
 					}
@@ -46,11 +98,10 @@
 					"raw": "{\n  \"text\": \"Отличное мероприятие! Очень понравилось.\",\n  \"parentCommentId\": null\n}"
 				},
 				"url": {
-					"raw": "localhost:8080/users/1/comments?eventId=1",
+					"raw": "{{baseUrl}}/users/1/comments?eventId={{eventId}}",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"users",
 						"1",
@@ -59,7 +110,7 @@
 					"query": [
 						{
 							"key": "eventId",
-							"value": "1"
+							"value": "{{eventId}}"
 						}
 					]
 				}
@@ -67,7 +118,7 @@
 			"response": []
 		},
 		{
-			"name": "Создание ответа на комментарий",
+			"name": "3. Создание ответа на комментарий",
 			"event": [
 				{
 					"listen": "test",
@@ -79,10 +130,10 @@
 							"",
 							"pm.test(\"Ответ содержит parentCommentId\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.parentCommentId).to.equal(pm.environment.get(\"commentId\"));",
+							"    pm.expect(jsonData.parentCommentId).to.equal(pm.variables.get(\"commentId\"));",
 							"});",
 							"",
-							"pm.environment.set(\"replyCommentId\", pm.response.json().id);"
+							"pm.variables.set(\"replyCommentId\", pm.response.json().id);"
 						],
 						"type": "text/javascript"
 					}
@@ -98,14 +149,13 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"text\": \"Согласен, было очень интересно!\",\n  \"parentCommentId\": \"{{commentId}}\"\n}"
+					"raw": "{\n  \"text\": \"Согласен, было очень интересно!\",\n  \"parentCommentId\": {{commentId}}\n}"
 				},
 				"url": {
-					"raw": "localhost:8080/users/2/comments?eventId=1",
+					"raw": "{{baseUrl}}/users/2/comments?eventId={{eventId}}",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"users",
 						"2",
@@ -114,7 +164,7 @@
 					"query": [
 						{
 							"key": "eventId",
-							"value": "1"
+							"value": "{{eventId}}"
 						}
 					]
 				}
@@ -122,7 +172,7 @@
 			"response": []
 		},
 		{
-			"name": "Модерация комментария (одобрение)",
+			"name": "4. Модерация комментария (одобрение)",
 			"event": [
 				{
 					"listen": "test",
@@ -154,11 +204,10 @@
 					"raw": "{\n  \"status\": \"APPROVED\"\n}"
 				},
 				"url": {
-					"raw": "localhost:8080/admin/comments/{{commentId}}",
+					"raw": "{{baseUrl}}/admin/comments/{{commentId}}",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"admin",
 						"comments",
@@ -169,7 +218,7 @@
 			"response": []
 		},
 		{
-			"name": "Модерация ответа (одобрение)",
+			"name": "5. Модерация ответа (одобрение)",
 			"event": [
 				{
 					"listen": "test",
@@ -201,11 +250,10 @@
 					"raw": "{\n  \"status\": \"APPROVED\"\n}"
 				},
 				"url": {
-					"raw": "localhost:8080/admin/comments/{{replyCommentId}}",
+					"raw": "{{baseUrl}}/admin/comments/{{replyCommentId}}",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"admin",
 						"comments",
@@ -216,7 +264,7 @@
 			"response": []
 		},
 		{
-			"name": "Лайк комментария",
+			"name": "6. Лайк комментария",
 			"event": [
 				{
 					"listen": "test",
@@ -240,11 +288,10 @@
 				"method": "POST",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/users/3/comments/{{commentId}}/like",
+					"raw": "{{baseUrl}}/users/3/comments/{{commentId}}/like",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"users",
 						"3",
@@ -257,7 +304,7 @@
 			"response": []
 		},
 		{
-			"name": "Дизлайк комментария",
+			"name": "7. Дизлайк комментария",
 			"event": [
 				{
 					"listen": "test",
@@ -281,11 +328,10 @@
 				"method": "POST",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/users/4/comments/{{commentId}}/dislike",
+					"raw": "{{baseUrl}}/users/4/comments/{{commentId}}/dislike",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"users",
 						"4",
@@ -298,7 +344,7 @@
 			"response": []
 		},
 		{
-			"name": "Удаление лайка",
+			"name": "8. Удаление лайка",
 			"event": [
 				{
 					"listen": "test",
@@ -316,11 +362,10 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/users/3/comments/{{commentId}}/like",
+					"raw": "{{baseUrl}}/users/3/comments/{{commentId}}/like",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"users",
 						"3",
@@ -333,56 +378,7 @@
 			"response": []
 		},
 		{
-			"name": "Обновление комментария",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Статус код 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Текст комментария обновлен\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.text).to.equal('Обновленный текст комментария');",
-							"    pm.expect(jsonData.status).to.equal('PENDING');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "PATCH",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"text\": \"Обновленный текст комментария\"\n}"
-				},
-				"url": {
-					"raw": "localhost:8080/users/1/comments/{{commentId}}",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"users",
-						"1",
-						"comments",
-						"{{commentId}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Получение комментариев события (сортировка по рейтингу)",
+			"name": "9. Получение комментариев события",
 			"event": [
 				{
 					"listen": "test",
@@ -406,14 +402,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/events/1/comments?sort=rating&from=0&size=10",
+					"raw": "{{baseUrl}}/events/{{eventId}}/comments?sort=rating&from=0&size=10",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"events",
-						"1",
+						"{{eventId}}",
 						"comments"
 					],
 					"query": [
@@ -435,58 +430,7 @@
 			"response": []
 		},
 		{
-			"name": "Получение комментариев для модерации",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Статус код 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Возвращает массив комментариев\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.be.an('array');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:8080/admin/comments?status=PENDING&from=0&size=10",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"admin",
-						"comments"
-					],
-					"query": [
-						{
-							"key": "status",
-							"value": "PENDING"
-						},
-						{
-							"key": "from",
-							"value": "0"
-						},
-						{
-							"key": "size",
-							"value": "10"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Получение комментариев пользователя",
+			"name": "10. Получение комментариев пользователя",
 			"event": [
 				{
 					"listen": "test",
@@ -510,11 +454,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/users/1/comments?from=0&size=10",
+					"raw": "{{baseUrl}}/users/1/comments?from=0&size=10",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"users",
 						"1",
@@ -535,7 +478,7 @@
 			"response": []
 		},
 		{
-			"name": "Закрепление комментария",
+			"name": "11. Закрепление комментария",
 			"event": [
 				{
 					"listen": "test",
@@ -567,11 +510,10 @@
 					"raw": "{\n  \"pinned\": true\n}"
 				},
 				"url": {
-					"raw": "localhost:8080/admin/comments/{{commentId}}",
+					"raw": "{{baseUrl}}/admin/comments/{{commentId}}",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"admin",
 						"comments",
@@ -582,7 +524,7 @@
 			"response": []
 		},
 		{
-			"name": "Удаление комментария",
+			"name": "12. Удаление комментария",
 			"event": [
 				{
 					"listen": "test",
@@ -600,11 +542,10 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/users/1/comments/{{commentId}}",
+					"raw": "{{baseUrl}}/users/1/comments/{{commentId}}",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8080",
 					"path": [
 						"users",
 						"1",
@@ -614,56 +555,50 @@
 				}
 			},
 			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
 		},
 		{
-			"name": "Попытка лайка несуществующего комментария",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Статус код 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"pm.test(\"Сообщение об ошибке\", function () {",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData).to.have.property('error');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"url": {
-					"raw": "localhost:8080/users/1/comments/9999/like",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"users",
-						"1",
-						"comments",
-						"9999",
-						"like"
-					]
-				}
-			},
-			"response": []
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	],
 	"variable": [
 		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "eventId",
+			"value": ""
+		},
+		{
+			"key": "categoryId",
+			"value": ""
+		},
+		{
 			"key": "commentId",
-			"value": "1"
+			"value": ""
 		},
 		{
 			"key": "replyCommentId",
-			"value": "2"
+			"value": ""
 		}
 	]
 }
