@@ -11,6 +11,7 @@ import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CommentMapper;
 import ru.practicum.model.*;
 import ru.practicum.model.enums.CommentStatus;
+import ru.practicum.model.enums.CommentSort;
 import ru.practicum.model.enums.EventState;
 import ru.practicum.model.enums.LikeType;
 import ru.practicum.repository.CommentRepository;
@@ -104,6 +105,15 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findByIdAndAuthorId(commentId, userId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
 
+        if (!comment.getReplies().isEmpty()) {
+            for (Comment reply : comment.getReplies()) {
+                reply.setText("[deleted - parent comment was deleted]");
+                reply.setStatus(CommentStatus.DELETED);
+                reply.setUpdated(LocalDateTime.now());
+                commentRepository.save(reply);
+            }
+        }
+
         comment.setText("[deleted]");
         comment.setStatus(CommentStatus.DELETED);
         comment.setUpdated(LocalDateTime.now());
@@ -129,7 +139,9 @@ public class CommentServiceImpl implements CommentService {
         }
 
         List<Comment> comments;
-        if ("rating".equals(sort)) {
+        CommentSort sortType = parseSortType(sort);
+
+        if (sortType == CommentSort.RATING) {
             comments = commentRepository.findTopByEventIdOrderByRating(eventId, pageable);
         } else {
             comments = commentRepository.findByEventIdAndStatusAndParentCommentIsNull(eventId, CommentStatus.APPROVED, pageable);
@@ -154,12 +166,8 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
 
         if (updateDto.getStatus() != null) {
-            try {
-                CommentStatus newStatus = CommentStatus.valueOf(updateDto.getStatus());
-                comment.setStatus(newStatus);
-            } catch (IllegalArgumentException e) {
-                throw new ConflictException("Invalid comment status: " + updateDto.getStatus());
-            }
+            CommentStatus newStatus = CommentStatus.from(updateDto.getStatus());
+            comment.setStatus(newStatus);
         }
 
         if (updateDto.getPinned() != null) {
@@ -260,5 +268,16 @@ public class CommentServiceImpl implements CommentService {
         comment.setRating(comment.getLikesCount() - comment.getDislikesCount());
         Comment updatedComment = commentRepository.save(comment);
         return CommentMapper.toCommentDto(updatedComment);
+    }
+
+    private CommentSort parseSortType(String sort) {
+        if (sort == null) {
+            return CommentSort.DATE;
+        }
+        try {
+            return CommentSort.valueOf(sort.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return CommentSort.DATE;
+        }
     }
 }
