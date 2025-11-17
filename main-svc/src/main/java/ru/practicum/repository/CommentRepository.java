@@ -8,7 +8,6 @@ import ru.practicum.model.Comment;
 import ru.practicum.model.enums.CommentStatus;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
