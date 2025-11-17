@@ -12,9 +12,12 @@ public class EventShortDto {
     private String annotation;
     private CategoryDto category;
     private Boolean paid;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
+
     private UserShortDto initiator;
     private Long views;
     private Integer confirmedRequests;
+    private Integer commentsCount;
 }

@@ -17,13 +17,14 @@ import ru.practicum.model.User;
 import ru.practicum.model.Category;
 import ru.practicum.model.Location;
 import ru.practicum.model.enums.EventState;
+import ru.practicum.model.enums.CommentStatus;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.UserRepository;
 import ru.practicum.repository.CategoryRepository;
-
-import jakarta.persistence.criteria.Predicate;
+import ru.practicum.repository.CommentRepository;
 import ru.practicum.service.EventService;
 
+import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,6 +38,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final CommentRepository commentRepository;
     private final StatsClient statsClient;
 
     @Override
@@ -56,7 +58,7 @@ public class EventServiceImpl implements EventService {
         Event savedEvent = eventRepository.save(event);
         log.info("Created event with id: {} for user: {}", savedEvent.getId(), userId);
 
-        return EventMapper.toEventFullDto(savedEvent);
+        return createEventFullDtoWithComments(savedEvent);
     }
 
     @Override
@@ -68,9 +70,13 @@ public class EventServiceImpl implements EventService {
         Page<Event> eventsPage = eventRepository.findByInitiatorId(userId, pageable);
         List<Event> events = eventsPage.getContent();
         Map<Long, Long> viewsMap = getEventsViews(events);
+        Map<Long, Integer> commentsCountMap = getEventsCommentsCount(events);
 
         return events.stream()
-                .map(EventMapper::toEventShortDto)
+                .map(event -> {
+                    Integer commentsCount = commentsCountMap.getOrDefault(event.getId(), 0);
+                    return EventMapper.toEventShortDto(event, commentsCount);
+                })
                 .map(dto -> {
                     dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
                     return dto;
@@ -83,10 +89,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        EventFullDto dto = EventMapper.toEventFullDto(event);
-        Long views = getEventViewsFromStats(eventId);
-        dto.setViews(views);
-        return dto;
+        return createEventFullDtoWithComments(event);
     }
 
     @Override
@@ -121,9 +124,7 @@ public class EventServiceImpl implements EventService {
         }
 
         Event updatedEvent = eventRepository.save(event);
-        EventFullDto result = EventMapper.toEventFullDto(updatedEvent);
-        result.setViews(getEventViewsFromStats(eventId));
-        return result;
+        return createEventFullDtoWithComments(updatedEvent);
     }
 
     @Override
@@ -142,14 +143,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndState(id, EventState.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + id + " was not found"));
 
-        Long views = getEventViewsFromStats(id);
-        log.info("Event {} has {} views from stats service", id, views);
-
-        EventFullDto dto = EventMapper.toEventFullDto(event);
-        dto.setViews(views);
-
-        log.info("Returning event {} with {} views", id, views);
-        return dto;
+        return createEventFullDtoWithComments(event);
     }
 
     @Override
@@ -170,9 +164,7 @@ public class EventServiceImpl implements EventService {
         event.setPublishedOn(LocalDateTime.now());
 
         Event savedEvent = eventRepository.save(event);
-        EventFullDto result = EventMapper.toEventFullDto(savedEvent);
-        result.setViews(getEventViewsFromStats(eventId));
-        return result;
+        return createEventFullDtoWithComments(savedEvent);
     }
 
     @Override
@@ -187,9 +179,7 @@ public class EventServiceImpl implements EventService {
 
         event.setState(EventState.CANCELED);
         Event savedEvent = eventRepository.save(event);
-        EventFullDto result = EventMapper.toEventFullDto(savedEvent);
-        result.setViews(getEventViewsFromStats(eventId));
-        return result;
+        return createEventFullDtoWithComments(savedEvent);
     }
 
     @Override
@@ -235,9 +225,7 @@ public class EventServiceImpl implements EventService {
 
         updateEventFields(event, updateRequest);
         Event updatedEvent = eventRepository.save(event);
-        EventFullDto result = EventMapper.toEventFullDto(updatedEvent);
-        result.setViews(getEventViewsFromStats(eventId));
-        return result;
+        return createEventFullDtoWithComments(updatedEvent);
     }
 
     @Override
@@ -253,9 +241,13 @@ public class EventServiceImpl implements EventService {
         Page<Event> eventsPage = eventRepository.findAll(spec, pageable);
 
         Map<Long, Long> viewsMap = getEventsViews(eventsPage.getContent());
+        Map<Long, Integer> commentsCountMap = getEventsCommentsCount(eventsPage.getContent());
 
         return eventsPage.getContent().stream()
-                .map(EventMapper::toEventFullDto)
+                .map(event -> {
+                    Integer commentsCount = commentsCountMap.getOrDefault(event.getId(), 0);
+                    return EventMapper.toEventFullDto(event, commentsCount);
+                })
                 .map(dto -> {
                     dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
                     return dto;
@@ -283,9 +275,13 @@ public class EventServiceImpl implements EventService {
         Page<Event> eventsPage = eventRepository.findAll(spec, pageable);
 
         Map<Long, Long> viewsMap = getEventsViews(eventsPage.getContent());
+        Map<Long, Integer> commentsCountMap = getEventsCommentsCount(eventsPage.getContent());
 
         List<EventShortDto> result = eventsPage.getContent().stream()
-                .map(EventMapper::toEventShortDto)
+                .map(event -> {
+                    Integer commentsCount = commentsCountMap.getOrDefault(event.getId(), 0);
+                    return EventMapper.toEventShortDto(event, commentsCount);
+                })
                 .map(dto -> {
                     dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
                     return dto;
@@ -511,6 +507,13 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    private EventFullDto createEventFullDtoWithComments(Event event) {
+        Long commentsCount = commentRepository.countByEventIdAndStatus(event.getId(), CommentStatus.APPROVED);
+        EventFullDto dto = EventMapper.toEventFullDto(event, commentsCount != null ? commentsCount.intValue() : 0);
+        dto.setViews(getEventViewsFromStats(event.getId()));
+        return dto;
+    }
+
     private Long getEventViewsFromStats(Long eventId) {
         try {
             Event event = eventRepository.findById(eventId)
@@ -570,6 +573,26 @@ public class EventServiceImpl implements EventService {
             return events.stream()
                     .collect(Collectors.toMap(Event::getId, event -> 0L));
         }
+    }
+
+    private Map<Long, Integer> getEventsCommentsCount(List<Event> events) {
+        if (events.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+
+        List<Object[]> commentsCounts = commentRepository.countCommentsByEventIdsAndStatus(
+                eventIds, CommentStatus.APPROVED);
+
+        return commentsCounts.stream()
+                .collect(Collectors.toMap(
+                        result -> (Long) result[0],
+                        result -> ((Long) result[1]).intValue(),
+                        (existing, replacement) -> existing
+                ));
     }
 
     private Long extractEventIdFromUri(String uri) {

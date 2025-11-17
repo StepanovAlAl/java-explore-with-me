@@ -45,6 +45,10 @@ public class EventMapper {
     }
 
     public static EventFullDto toEventFullDto(Event event) {
+        return toEventFullDto(event, 0);
+    }
+
+    public static EventFullDto toEventFullDto(Event event, Integer commentsCount) {
         if (event == null) {
             return null;
         }
@@ -71,6 +75,7 @@ public class EventMapper {
         dto.setState(event.getState());
         dto.setConfirmedRequests(event.getConfirmedRequests());
         dto.setViews(0L);
+        dto.setCommentsCount(commentsCount);
 
         if (event.getInitiator() != null) {
             dto.setInitiator(UserMapper.toUserShortDto(event.getInitiator()));
@@ -84,6 +89,10 @@ public class EventMapper {
     }
 
     public static EventShortDto toEventShortDto(Event event) {
+        return toEventShortDto(event, 0);
+    }
+
+    public static EventShortDto toEventShortDto(Event event, Integer commentsCount) {
         if (event == null) {
             return null;
         }
@@ -96,6 +105,7 @@ public class EventMapper {
         dto.setTitle(event.getTitle());
         dto.setConfirmedRequests(event.getConfirmedRequests());
         dto.setViews(0L);
+        dto.setCommentsCount(commentsCount);
 
         if (event.getInitiator() != null) {
             dto.setInitiator(UserMapper.toUserShortDto(event.getInitiator()));

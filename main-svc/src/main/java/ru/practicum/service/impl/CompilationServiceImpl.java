@@ -13,6 +13,7 @@ import ru.practicum.model.Compilation;
 import ru.practicum.model.Event;
 import ru.practicum.repository.CompilationRepository;
 import ru.practicum.repository.EventRepository;
+import ru.practicum.repository.CommentRepository;
 import ru.practicum.service.CompilationService;
 
 import java.util.HashSet;
@@ -27,6 +28,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
+    private final CommentRepository commentRepository;
 
     @Override
     @Transactional
@@ -46,7 +48,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         Compilation savedCompilation = compilationRepository.save(compilation);
-        return CompilationMapper.toCompilationDto(savedCompilation);
+        return CompilationMapper.toCompilationDto(savedCompilation, commentRepository);
     }
 
     @Override
@@ -79,7 +81,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         Compilation updatedCompilation = compilationRepository.save(compilation);
-        return CompilationMapper.toCompilationDto(updatedCompilation);
+        return CompilationMapper.toCompilationDto(updatedCompilation, commentRepository);
     }
 
     @Override
@@ -92,7 +94,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         return compilations.stream()
-                .map(CompilationMapper::toCompilationDto)
+                .map(compilation -> CompilationMapper.toCompilationDto(compilation, commentRepository))
                 .collect(Collectors.toList());
     }
 
@@ -100,6 +102,6 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto getCompilation(Long compId) {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found"));
-        return CompilationMapper.toCompilationDto(compilation);
+        return CompilationMapper.toCompilationDto(compilation, commentRepository);
     }
 }
