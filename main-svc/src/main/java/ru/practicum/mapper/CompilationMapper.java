@@ -4,18 +4,11 @@ import ru.practicum.dto.CompilationDto;
 import ru.practicum.dto.EventShortDto;
 import ru.practicum.dto.NewCompilationDto;
 import ru.practicum.model.Compilation;
-import ru.practicum.repository.CommentRepository;
-import ru.practicum.model.enums.CommentStatus;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CompilationMapper {
-
-    private static CommentRepository commentRepository;
-
-    public static void setCommentRepository(CommentRepository repository) {
-        commentRepository = repository;
-    }
 
     public static Compilation toCompilation(NewCompilationDto newCompilationDto) {
         if (newCompilationDto == null) {
@@ -32,7 +25,7 @@ public class CompilationMapper {
         return toCompilationDto(compilation, null);
     }
 
-    public static CompilationDto toCompilationDto(Compilation compilation, CommentRepository commentRepo) {
+    public static CompilationDto toCompilationDto(Compilation compilation, Map<Long, Integer> eventCommentsCount) {
         if (compilation == null) {
             return null;
         }
@@ -45,10 +38,9 @@ public class CompilationMapper {
         if (compilation.getEvents() != null) {
             dto.setEvents(compilation.getEvents().stream()
                     .map(event -> {
-                        Long commentsCount = commentRepo != null ?
-                                commentRepo.countByEventIdAndStatus(event.getId(), CommentStatus.APPROVED) : 0L;
-                        EventShortDto shortDto = EventMapper.toEventShortDto(event,
-                                commentsCount != null ? commentsCount.intValue() : 0);
+                        Integer commentsCount = eventCommentsCount != null ?
+                                eventCommentsCount.getOrDefault(event.getId(), 0) : 0;
+                        EventShortDto shortDto = EventMapper.toEventShortDto(event, commentsCount);
                         return shortDto;
                     })
                     .collect(Collectors.toList()));

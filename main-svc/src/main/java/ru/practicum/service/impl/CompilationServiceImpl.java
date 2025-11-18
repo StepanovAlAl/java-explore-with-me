@@ -11,6 +11,7 @@ import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CompilationMapper;
 import ru.practicum.model.Compilation;
 import ru.practicum.model.Event;
+import ru.practicum.model.enums.CommentStatus;
 import ru.practicum.repository.CompilationRepository;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.CommentRepository;
@@ -18,6 +19,7 @@ import ru.practicum.service.CompilationService;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,7 +50,10 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         Compilation savedCompilation = compilationRepository.save(compilation);
-        return CompilationMapper.toCompilationDto(savedCompilation, commentRepository);
+
+        Map<Long, Integer> commentsCountMap = getCommentsCountForEvents(savedCompilation.getEvents());
+
+        return CompilationMapper.toCompilationDto(savedCompilation, commentsCountMap);
     }
 
     @Override
@@ -81,7 +86,10 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         Compilation updatedCompilation = compilationRepository.save(compilation);
-        return CompilationMapper.toCompilationDto(updatedCompilation, commentRepository);
+
+        Map<Long, Integer> commentsCountMap = getCommentsCountForEvents(updatedCompilation.getEvents());
+
+        return CompilationMapper.toCompilationDto(updatedCompilation, commentsCountMap);
     }
 
     @Override
@@ -93,8 +101,14 @@ public class CompilationServiceImpl implements CompilationService {
             compilations = compilationRepository.findAll(pageable).getContent();
         }
 
+        Set<Event> allEvents = compilations.stream()
+                .flatMap(compilation -> compilation.getEvents().stream())
+                .collect(Collectors.toSet());
+
+        Map<Long, Integer> commentsCountMap = getCommentsCountForEvents(allEvents);
+
         return compilations.stream()
-                .map(compilation -> CompilationMapper.toCompilationDto(compilation, commentRepository))
+                .map(compilation -> CompilationMapper.toCompilationDto(compilation, commentsCountMap))
                 .collect(Collectors.toList());
     }
 
@@ -102,6 +116,29 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto getCompilation(Long compId) {
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found"));
-        return CompilationMapper.toCompilationDto(compilation, commentRepository);
+
+        Map<Long, Integer> commentsCountMap = getCommentsCountForEvents(compilation.getEvents());
+
+        return CompilationMapper.toCompilationDto(compilation, commentsCountMap);
+    }
+
+    private Map<Long, Integer> getCommentsCountForEvents(Set<Event> events) {
+        if (events == null || events.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+
+        List<Object[]> commentsCounts = commentRepository.countCommentsByEventIdsAndStatus(
+                eventIds, CommentStatus.APPROVED);
+
+        return commentsCounts.stream()
+                .collect(Collectors.toMap(
+                        result -> (Long) result[0],
+                        result -> ((Long) result[1]).intValue(),
+                        (existing, replacement) -> existing
+                ));
     }
 }
